@@ -1,1 +1,0 @@
-from .PatternCollector import PatternCollector

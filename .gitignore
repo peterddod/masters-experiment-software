@@ -1,3 +1,5 @@
 /dataset
 /results/*
+/processed/*
 /__pycache__
+/models/__pycache__
