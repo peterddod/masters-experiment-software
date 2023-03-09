@@ -2,7 +2,7 @@ from torch import nn
 
 
 class SmallFC(nn.Module):
-    def __init__(self, hidden_units=10):
+    def __init__(self, hidden_units=24):
         super(SmallFC, self).__init__()
 
         self.model = nn.Sequential(

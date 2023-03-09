@@ -1,6 +1,7 @@
 import torch
 import random
 import numpy as np  
+from torch import nn
 
 
 class FileWriter():
@@ -42,7 +43,7 @@ class ByteWriter():
             f.close()
 
 
-class ByteWriter():
+class ByteReader():
     """
     Reads bytes from a given path.
     """
@@ -66,3 +67,19 @@ def resetseed(seed=0):
     torch.manual_seed(seed)
     random.seed(seed)
     np.random.seed(seed)
+
+
+def ceil_to_factor(value, factor):
+    """
+    Round a value to the nearest factor of a given number.
+    """
+    return int(np.ceil(value/factor)*factor)
+
+
+def init_weights(m, method, params_dict={}, module_types=[nn.Linear, nn.LazyLinear, nn.Conv2d, nn.LazyConv2d]):
+    if type(m) in module_types:
+        method(m.weight, **params_dict)
+
+
+def he_init(m):
+    init_weights(m, nn.init.kaiming_normal_, params_dict={'mode':'fan_in', 'nonlinearity':'relu'})

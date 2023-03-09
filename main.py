@@ -5,6 +5,7 @@ Part of MSci Project for Peter Dodd @ University of Glasgow.
 """
 import torch
 import os
+import sys
 from torch import nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -13,7 +14,7 @@ from torch.utils.data import DataLoader
 import numpy as np  
 from time import time
 from datetime import datetime
-from models import SmallFC
+from models import ExpLeNet5, ExpModelFC, SmallFC
 from utils import *
 import argparse
 import torch.multiprocessing as mp
@@ -21,6 +22,8 @@ from train import *
 from analysis import analyse_model, extract
 import warnings
 import json
+
+from config import *
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -32,6 +35,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("-f", "--filename", default=f'{datetime.now().strftime("%d.%m.%Y %H.%M.%S")}', help="Name of output folder")
 parser.add_argument("-s", "--seed", default=1, help="Seed to run experiment on", type=int)
+parser.add_argument("-p", "--process", help="Process patterns into byte output file - stops saving model snapshots", action='store_true')
 
 
 ### TRAINING PARAMETERS
@@ -41,23 +45,10 @@ parser.add_argument("-b", "--batchsize", default=64, help="Size of each training
 parser.add_argument("-m", "--model", default='small_fc', help="The model to run training for")
 parser.add_argument("-o", "--optimiser", default='sgd', help="Optimiser for training")
 parser.add_argument("-l", "--loss", default='nll', help="Loss function for training")
-parser.add_argument("-t", "--theta", default=0.01, help="Learning rate", type=int)
+parser.add_argument("-t", "--theta", default=0.01, help="Learning rate", type=float)
 
 
-### PARAMATER MAPS
 
-model_map = {
-    'small_fc': SmallFC,
-}
-
-optimiser_map = {
-    'sgd': optim.SGD
-}
-
-loss_map = {
-    'nll': nn.NLLLoss,
-    'mse': nn.MSELoss,
-}
 
 
 ### SCRIPT
@@ -79,17 +70,14 @@ if __name__ == '__main__':
             ])).data.reshape([60000,1,28,28]).to(torch.float32)
 
     os.mkdir(f'./results/{args.filename}/')
-    file = FileWriter(f'./results/{args.filename}/training.log', ",".join(['epoch','step','train_loss','test_accuracy']))
-    pattern_file = ByteWriter(f'./results/{args.filename}/patterns.bytes')
+    if not args.process: 
+        os.mkdir(f'./results/{args.filename}/snapshots/')
+    else:
+        pattern_file = ByteWriter(f'./results/{args.filename}/patterns.bin')
 
-    activation_idxs, skip_idxs, layer_output_sizes = analyse_model(model, pattern_data, pattern_file)
+    file = FileWriter(f'./results/{args.filename}/log.csv', ",".join(['epoch','step','train_loss','test_accuracy']))
 
-    info_dictionary = {
-        'script_paramaters': {
-            **dict(args._get_kwargs()),
-        },
-        'layer_output_sizes': layer_output_sizes,
-    }
+    if args.process: activation_idxs, skip_idxs, layer_output_sizes = analyse_model(model, pattern_data, pattern_file)
 
     train_loader = torch.utils.data.DataLoader(
         datasets.MNIST('./dataset', train=True, download=True,
@@ -111,6 +99,15 @@ if __name__ == '__main__':
         shuffle=False,
     )
 
+    info_dictionary = {
+        'script_paramaters': {
+            **dict(args._get_kwargs()),
+        },
+        'dataset_size': len(train_loader.dataset)
+    }
+
+    if args.process: info_dictionary['layer_output_sizes'] = layer_output_sizes
+
     total = 0
     loss = loss_map[args.loss]()
 
@@ -123,14 +120,20 @@ if __name__ == '__main__':
                 batch_idx,
                 file
             )) 
-            p_pattern_analysis = mp.Process(target=extract, args=(
-                model.state_dict(),
-                model_map[args.model],
-                skip_idxs,
-                activation_idxs,
-                pattern_data,
-                pattern_file,
-            )) 
+            if args.process:
+                p_pattern_analysis = mp.Process(target=extract, args=(
+                    model.state_dict(),
+                    model_map[args.model],
+                    skip_idxs,
+                    activation_idxs,
+                    pattern_data,
+                    pattern_file,
+                )) 
+            else:
+                p_pattern_analysis = mp.Process(target=save_state_dict, args=(
+                    model.state_dict(),
+                    f'./results/{args.filename}/snapshots/{epoch}_{batch_idx}.pt'
+                )) 
 
             p_train_epoch.start()
             p_pattern_analysis.start()
@@ -142,6 +145,6 @@ if __name__ == '__main__':
 
     info_dictionary['execution_time'] = t_end-t_start
 
-    with open(f'./results/{args.filename}/experiment.info', 'w') as f:
+    with open(f'./results/{args.filename}/info.json', 'w') as f:
         json.dump(info_dictionary, f, indent = 4) 
         f.close()

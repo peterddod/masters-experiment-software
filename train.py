@@ -8,7 +8,7 @@ import torch
 
 def run_epoch(model, optimiser, loss, train_datapoint, test_data, target, epoch, batch_idx, file):
     loss = train_step(model, optimiser, loss, train_datapoint, target)
-    accuracy = evaluate_epoch(model, test_data)
+    accuracy = 0  # evaluate_epoch(model, test_data)
 
     file( ",".join([str(epoch),str(batch_idx),str(loss),str(accuracy)]))
 
@@ -42,4 +42,11 @@ def evaluate_epoch(model, dataloader):
     accuracy = (correct/total).item()
 
     return accuracy
-    
+
+def save_state_dict(state_dict, path):
+    torch.save(state_dict, path)
+
+def load_model(model_cls, path):
+    model = model_cls()
+    model.load_state_dict(torch.load(path))
+    return model
