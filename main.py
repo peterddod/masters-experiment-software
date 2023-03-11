@@ -100,7 +100,7 @@ if __name__ == '__main__':
     )
 
     info_dictionary = {
-        'script_paramaters': {
+        'script_parameters': {
             **dict(args._get_kwargs()),
         },
         'dataset_size': len(train_loader.dataset)
