@@ -65,7 +65,7 @@ def extract(model, data):
     _output = []
 
     def hook(model, input, output):
-        _output.append(output)
+        _output.append(output.flatten())
         return
 
     model.apply_activation_hook(hook)
@@ -126,10 +126,24 @@ def get_similarities(m1, m2, compareFunction=cos_sim):
     return output
 
 
-def load(inputname, filename):
+def load_cached_pattern(inputname, filename):
     output = None
     try:
-        output = torch.load(f'./processed/{inputname}/.cache/{filename}.pt')
+        output = torch.load(f'./processed/{inputname}/.cache/{filename}.pt').detach()
+    except Exception as e:
+        print(e)
+        pass
+
+    return output
+
+
+def load_snapshot(inputname, filename, model_cls):
+    output = None
+    try:
+        model = model_cls()
+        model.load_state_dict(torch.load(f'./results/{inputname}/snapshots/{filename}.pt'))
+        output = model
+
     except Exception as e:
         print(e)
         pass
@@ -157,6 +171,36 @@ def get_prev(current_filename, n, samplerate, updates_in_epoch, batch_size):
     return f'{epoch}_{update}'
 
 
+def get_mean_abs_weight_difference(model1, model2):
+    """
+    Calculates the mean elementwise absolute difference in weights between two identically structured models.
+    """
+    if model1==None or model2==None: return torch.Tensor([0])
+
+    diff_list = []
+
+    model2_modules = [*model2.modules()]
+
+    for i, module in enumerate(model1.modules()):
+        try:
+            weight1 = module.weight.data
+            weight2 = model2_modules[i].weight.data
+
+            diff_list.append(torch.abs(weight1 - weight2).flatten())
+        except Exception as e:
+            pass
+
+        try:
+            weight1 = module.bias.data
+            weight2 = model2_modules[i].bias.data
+
+            diff_list.append(torch.abs(weight1 - weight2).flatten())
+        except:
+            pass
+
+    return torch.cat(diff_list)
+
+
 def process_statistics(filename, output, test_dataloader, input_name, model_cls, at_10_filename, at_100_filename):
     """
     Processes the statistics for a particular update.
@@ -170,6 +214,18 @@ def process_statistics(filename, output, test_dataloader, input_name, model_cls,
     - std_ap_sim@10
     - mean_ap_sim@100
     - std_ap_sim@100
+    - mean_ap_sim@init
+    - std_ap_sim@init
+    - mean_ap_sim@final
+    - std_ap_sim@final
+    - mean_wc@10
+    - std_wc@10
+    - mean_wc@100
+    - std_wc@100
+    - mean_wc@init
+    - std_wc@init
+    - mean_wc@final
+    - std_wc@final
     """
     split = filename.split('_')
     epoch = int(split[0])
@@ -182,21 +238,53 @@ def process_statistics(filename, output, test_dataloader, input_name, model_cls,
     activation_matrix = torch.load(f'./processed/{input_name}/.cache/{filename}.pt').detach()
     unique_ap = get_number_of_unique_patterns(activation_matrix)
 
-    at_10 = load(input_name, at_10_filename)
-    at_100 = load(input_name, at_100_filename)
-
+    at_10 = load_cached_pattern(input_name, at_10_filename)
     sim_at_10 = get_similarities(at_10, activation_matrix)
+
+    at_100 = load_cached_pattern(input_name, at_100_filename)
     sim_at_100 = get_similarities(at_100, activation_matrix)
+
+    at_init = load_cached_pattern(input_name, 'init')
+    sim_at_init = get_similarities(at_init, activation_matrix)
+
+    at_final = load_cached_pattern(input_name, 'final')
+    sim_at_final = get_similarities(at_final, activation_matrix)
+
+    at_10_model = load_snapshot(input_name, at_10_filename, model_cls)
+    wc_at_10 = get_mean_abs_weight_difference(model, at_10_model)
+
+    at_100_model = load_snapshot(input_name, at_100_filename, model_cls)
+    wc_at_100 = get_mean_abs_weight_difference(model, at_100_model)
+
+    at_init_model = load_snapshot(input_name, 'init', model_cls)
+    wc_at_init = get_mean_abs_weight_difference(model, at_init_model)
+
+    at_final_model = load_snapshot(input_name, 'final', model_cls)
+    wc_at_final = get_mean_abs_weight_difference(model, at_final_model)
 
     output(",".join([
         str(epoch), 
         str(batch_idx),
         str(test_acc),
         str(unique_ap),
+
         str(np.mean(sim_at_10)),
         str(np.std(sim_at_10)),
         str(np.mean(sim_at_100)),
         str(np.std(sim_at_100)),
+        str(np.mean(sim_at_init)),
+        str(np.std(sim_at_init)),
+        str(np.mean(sim_at_final)),
+        str(np.std(sim_at_final)),
+
+        str(wc_at_10.mean().item()),
+        str(wc_at_10.std().item()),
+        str(wc_at_100.mean().item()),
+        str(wc_at_100.std().item()),   
+        str(wc_at_init.mean().item()),
+        str(wc_at_init.std().item()),   
+        str(wc_at_final.mean().item()),
+        str(wc_at_final.std().item()),         
         ]))
 
 
