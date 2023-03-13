@@ -14,7 +14,6 @@ from torch.utils.data import DataLoader
 import numpy as np  
 from time import time
 from datetime import datetime
-from models import ExpLeNet5, ExpModelFC, SmallFC
 from utils import *
 import argparse
 import torch.multiprocessing as mp
@@ -22,7 +21,6 @@ from train import *
 from analysis import analyse_model, extract
 import warnings
 import json
-
 from config import *
 
 
@@ -36,6 +34,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--filename", default=f'{datetime.now().strftime("%d.%m.%Y %H.%M.%S")}', help="Name of output folder")
 parser.add_argument("-s", "--seed", default=1, help="Seed to run experiment on", type=int)
 parser.add_argument("-p", "--process", help="Process patterns into byte output file - stops saving model snapshots", action='store_true')
+parser.add_argument("-sr", "--samplerate", default=10, help="Seed to run experiment on", type=int)
 
 
 ### TRAINING PARAMETERS
@@ -46,9 +45,7 @@ parser.add_argument("-m", "--model", default='small_fc', help="The model to run 
 parser.add_argument("-o", "--optimiser", default='sgd', help="Optimiser for training")
 parser.add_argument("-l", "--loss", default='nll', help="Loss function for training")
 parser.add_argument("-t", "--theta", default=0.01, help="Learning rate", type=float)
-
-
-
+parser.add_argument("-w", "--weight_decay", default=0, help="Weight decay", type=float)
 
 
 ### SCRIPT
@@ -111,8 +108,15 @@ if __name__ == '__main__':
     total = 0
     loss = loss_map[args.loss]()
 
+    if not args.process:
+        save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/init.pt')
+
+    updates_in_epoch = info_dictionary['dataset_size'] // args.batchsize
+
     for epoch in range(1, args.epochs+1):
         for batch_idx, (data, target) in enumerate(train_loader):
+            take_snapshot = (batch_idx + (epoch-1)*updates_in_epoch) % args.samplerate == 0
+
             p_train_epoch = mp.Process(target=run_epoch, args=(
                 model, optimiser, loss, 
                 data, test_loader,
@@ -136,10 +140,15 @@ if __name__ == '__main__':
                 )) 
 
             p_train_epoch.start()
-            p_pattern_analysis.start()
+            if take_snapshot:
+                p_pattern_analysis.start()
 
             p_train_epoch.join()
-            p_pattern_analysis.join()
+            if take_snapshot:
+                p_pattern_analysis.join()
+
+    if not args.process:
+        save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/final.pt')
 
     t_end = time()
 

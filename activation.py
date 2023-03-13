@@ -3,10 +3,12 @@ import torch
 from torch import nn
 from time import time
 from torch import multiprocessing as mp
+from patternanalysis import PatternCounter
 from train import evaluate_epoch
 from functools import partial
 from patternanalysis import BinaryPathTree
 import os
+from collections import Counter
 
 
 def make_activation_matrix(byte_sequence, neuron_count):
@@ -65,7 +67,7 @@ def extract(model, data):
     _output = []
 
     def hook(model, input, output):
-        _output.append(output.flatten())
+        _output.append(output.flatten(1))
         return
 
     model.apply_activation_hook(hook)
@@ -85,26 +87,33 @@ def cache_pattern_matrix(filename, input_name, data, model_cls):
     a .pt to the specifed path.
     """
     if filename==None:  return
-
     model_path = f'./results/{input_name}/snapshots/{filename}.pt'
     cache_path = f'./processed/{input_name}/.cache/{filename}.pt'
-
     model = model_cls()
     model.load_state_dict(torch.load(model_path))
-
     # find activation pattern matrix
     activation_matrix = extract(model, data)
-
     # cache activation pattern
     torch.save(activation_matrix, cache_path)
 
 
 def get_number_of_unique_patterns(activation_matrix):
-    tree = BinaryPathTree()
+    # counter = PatternCounter()
 
-    [tree.add(list(x)) for x in activation_matrix]
+    # [counter.add(list(x)) for x in activation_matrix]
+    convert_func = lambda i: hash(str(i.tolist()))
+    activation_matrix_hash = map(convert_func, activation_matrix)
+    # print('b')
+    counter = Counter(activation_matrix_hash)
+    # [counter.append(x) for x in activation_matrix_hash if counter.count(x) != 0]
+    # for x in activation_matrix_hash:
+    #     counter.add(x)
+    #          print('1')
+    # print('c')
+    # for i in range(len(activation_matrix)):
+    #     counter.add(list(activation_matrix[i]))
 
-    return len(tree)  # returns number of leaf nodes in binary tree of patterns, i.e. number of unique patterns
+    return len(counter.keys())  # returns number of leaf nodes in binary tree of patterns, i.e. number of unique patterns
 
 
 def cos_sim(a, b):
@@ -233,10 +242,12 @@ def process_statistics(filename, output, test_dataloader, input_name, model_cls,
 
     model = model_cls()
     model.load_state_dict(torch.load(f'./results/{input_name}/snapshots/{filename}.pt'))
-
     test_acc = evaluate_epoch(model, test_dataloader)
+
+
     activation_matrix = torch.load(f'./processed/{input_name}/.cache/{filename}.pt').detach()
     unique_ap = get_number_of_unique_patterns(activation_matrix)
+
 
     at_10 = load_cached_pattern(input_name, at_10_filename)
     sim_at_10 = get_similarities(at_10, activation_matrix)
@@ -249,6 +260,7 @@ def process_statistics(filename, output, test_dataloader, input_name, model_cls,
 
     at_final = load_cached_pattern(input_name, 'final')
     sim_at_final = get_similarities(at_final, activation_matrix)
+
 
     at_10_model = load_snapshot(input_name, at_10_filename, model_cls)
     wc_at_10 = get_mean_abs_weight_difference(model, at_10_model)

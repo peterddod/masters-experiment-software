@@ -105,7 +105,8 @@ if __name__ == '__main__':
             pattern_data,
             model_cls)
         
-        [func(x) for x in storage_window_filenames]
+        # map(func, storage_window_filenames)
+        for x in storage_window_filenames: func(x)
 
         func = lambda filename: process_statistics(
             filename,
