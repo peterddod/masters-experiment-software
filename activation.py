@@ -236,6 +236,8 @@ def process_statistics(filename, output, test_dataloader, input_name, model_cls,
     - mean_wc@final
     - std_wc@final
     """
+    if filename == None: return 
+
     split = filename.split('_')
     epoch = int(split[0])
     batch_idx = int(split[1])

@@ -16,7 +16,7 @@ lenet_experiment:
 	python main.py -f exp_lenet -b 32 -t 0.0003 -o adam -m exp_lenet -e 5 -l crossentropy -s 1 -w 0.000001 -sr 10
 
 fc_process:
-	python file_process.py -i exp_fc -f exp_fc_t -s 10
+	python file_process.py -i exp_fc -f exp_fc -s 10
 
 lenet_process:
 	python file_process.py -i exp_lenet -f exp_lenet -s 10
@@ -32,3 +32,5 @@ fc_exp_test:
 lenet_exp_test:
 	rm -rf processed/exp_lenet
 	python file_process.py -i exp_lenet -f exp_lenet -s 10
+
+exp: exp_train exp_process

@@ -117,35 +117,32 @@ if __name__ == '__main__':
         for batch_idx, (data, target) in enumerate(train_loader):
             take_snapshot = (batch_idx + (epoch-1)*updates_in_epoch) % args.samplerate == 0
 
-            p_train_epoch = mp.Process(target=run_epoch, args=(
+            run_epoch(
                 model, optimiser, loss, 
                 data, test_loader,
                 target, epoch,
                 batch_idx,
                 file
-            )) 
-            if args.process:
-                p_pattern_analysis = mp.Process(target=extract, args=(
-                    model.state_dict(),
-                    model_map[args.model],
-                    skip_idxs,
-                    activation_idxs,
-                    pattern_data,
-                    pattern_file,
-                )) 
-            else:
-                p_pattern_analysis = mp.Process(target=save_state_dict, args=(
-                    model.state_dict(),
-                    f'./results/{args.filename}/snapshots/{epoch}_{batch_idx}.pt'
-                )) 
+            )
+            # if args.process:
+            #     p_pattern_analysis = mp.Process(target=extract, args=(
+            #         model.state_dict(),
+            #         model_map[args.model],
+            #         skip_idxs,
+            #         activation_idxs,
+            #         pattern_data,
+            #         pattern_file,
+            #     )) 
+            # else:
+            #     p_pattern_analysis = mp.Process(target=save_state_dict, args=(
+            #         model.state_dict(),
+            #         f'./results/{args.filename}/snapshots/{epoch}_{batch_idx}.pt'
+            #     )) 
 
-            p_train_epoch.start()
-            if take_snapshot:
-                p_pattern_analysis.start()
 
-            p_train_epoch.join()
             if take_snapshot:
-                p_pattern_analysis.join()
+                save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/{epoch}_{batch_idx}.pt')
+
 
     if not args.process:
         save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/final.pt')
