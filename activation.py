@@ -164,6 +164,8 @@ def get_prev(current_filename, n, samplerate, updates_in_epoch, batch_size):
     """
     Find the previous n filename if exists, otherwise return None.
     """
+    if current_filename == None: return 
+
     split = current_filename.split('_')
     epoch = int(split[0])
     batch_idx = int(split[1])
