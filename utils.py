@@ -2,6 +2,8 @@ import torch
 import random
 import numpy as np  
 from torch import nn
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
 
 
 class FileWriter():
@@ -83,3 +85,67 @@ def init_weights(m, method, params_dict={}, module_types=[nn.Linear, nn.LazyLine
 
 def he_init(m):
     init_weights(m, nn.init.kaiming_normal_, params_dict={'mode':'fan_in', 'nonlinearity':'relu'})
+
+
+def get_train_loaders(dataset, batchsize=64):
+    if dataset == 'mnist':
+        train_loader = torch.utils.data.DataLoader(
+            datasets.MNIST('./dataset', train=True, download=True,
+                transform=transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.1307,), (0.3081,))
+                ])),
+            batch_size=batchsize, 
+            shuffle=True,
+        )
+
+        test_loader = torch.utils.data.DataLoader(
+            datasets.MNIST('./dataset', train=False, download=True,
+                transform=transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.1307,), (0.3081,))
+                ])),
+            batch_size=256, 
+            shuffle=False,
+        )
+
+        return train_loader, test_loader
+    
+    elif dataset == 'cifar10':
+        train_loader = torch.utils.data.DataLoader(
+            datasets.CIFAR10('./dataset', train=True, download=True,
+                transform=transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.1307,), (0.3081,))
+                ])),
+            batch_size=batchsize, 
+            shuffle=True,
+        )
+
+        test_loader = torch.utils.data.DataLoader(
+            datasets.CIFAR10('./dataset', train=False, download=True,
+                transform=transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.1307,), (0.3081,))
+                ])),
+            batch_size=256, 
+            shuffle=False,
+        )
+
+        return train_loader, test_loader
+    
+
+def get_pattern_data(dataset):
+    if dataset == 'mnist':
+        return datasets.MNIST('./dataset', train=True, download=True,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,))
+            ])).data.reshape([60000,1,28,28]).to(torch.float32)
+    
+    elif dataset == 'cifar10':
+        return datasets.CIFAR10('./dataset', train=True, download=True,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,))
+            ])).data.reshape([50000,3,28,28]).to(torch.float32)

@@ -1,12 +1,6 @@
 import numpy as np
 import torch
-from torch import nn
-from time import time
-from torch import multiprocessing as mp
-from patternanalysis import PatternCounter
 from src.train import evaluate_epoch
-from functools import partial
-from patternanalysis import BinaryPathTree
 import os
 from collections import Counter
 
@@ -91,29 +85,16 @@ def cache_pattern_matrix(filename, input_name, data, model_cls):
     cache_path = f'./processed/{input_name}/.cache/{filename}.pt'
     model = model_cls()
     model.load_state_dict(torch.load(model_path))
-    # find activation pattern matrix
     activation_matrix = extract(model, data)
-    # cache activation pattern
     torch.save(activation_matrix, cache_path)
 
 
 def get_number_of_unique_patterns(activation_matrix):
-    # counter = PatternCounter()
-
-    # [counter.add(list(x)) for x in activation_matrix]
     convert_func = lambda i: hash(str(i.tolist()))
     activation_matrix_hash = map(convert_func, activation_matrix)
-    # print('b')
     counter = Counter(activation_matrix_hash)
-    # [counter.append(x) for x in activation_matrix_hash if counter.count(x) != 0]
-    # for x in activation_matrix_hash:
-    #     counter.add(x)
-    #          print('1')
-    # print('c')
-    # for i in range(len(activation_matrix)):
-    #     counter.add(list(activation_matrix[i]))
 
-    return len(counter.keys())  # returns number of leaf nodes in binary tree of patterns, i.e. number of unique patterns
+    return len(counter.keys()) 
 
 
 def cos_sim(a, b):
@@ -128,9 +109,6 @@ def get_similarities(m1, m2, compareFunction=cos_sim):
 
     for i in range(m1.shape[0]):
         output.append(compareFunction(m1[i], m2[i]))
-
-    # def func(x): output.append(compareFunction(m1[x], m2[x]))
-    # map(func, range((m1.shape[0])))
 
     return output
 
@@ -212,7 +190,7 @@ def get_mean_abs_weight_difference(model1, model2):
     return torch.cat(diff_list)
 
 
-def process_statistics(filename, output, test_dataloader, input_name, model_cls, at_10_filename, at_100_filename):
+def process_statistics(filename, output, test_dataloader, input_name, model_cls, at_10_filename, at_100_filename, measure_unique_patterns, device):
     """
     Processes the statistics for a particular update.
 
@@ -240,68 +218,51 @@ def process_statistics(filename, output, test_dataloader, input_name, model_cls,
     """
     if filename == None: return 
 
+    output_measures = []
+
     split = filename.split('_')
     epoch = int(split[0])
     batch_idx = int(split[1])
 
     model = model_cls()
     model.load_state_dict(torch.load(f'./results/{input_name}/snapshots/{filename}.pt'))
-    test_acc = evaluate_epoch(model, test_dataloader)
+    test_acc = evaluate_epoch(model, test_dataloader, device)
 
+    output_measures.append(str(epoch))
+    output_measures.append(str(batch_idx))
+    output_measures.append(str(epoch))
 
     activation_matrix = torch.load(f'./processed/{input_name}/.cache/{filename}.pt').detach()
-    unique_ap = get_number_of_unique_patterns(activation_matrix)
 
+    if measure_unique_patterns: output_measures.append(str(get_number_of_unique_patterns(activation_matrix)))
 
     at_10 = load_cached_pattern(input_name, at_10_filename)
-    sim_at_10 = get_similarities(at_10, activation_matrix)
+    output_measures.append(str(get_similarities(at_10, activation_matrix)))
 
     at_100 = load_cached_pattern(input_name, at_100_filename)
-    sim_at_100 = get_similarities(at_100, activation_matrix)
+    output_measures.append(str(get_similarities(at_100, activation_matrix)))
 
     at_init = load_cached_pattern(input_name, 'init')
-    sim_at_init = get_similarities(at_init, activation_matrix)
+    output_measures.append(str(get_similarities(at_init, activation_matrix)))
 
     at_final = load_cached_pattern(input_name, 'final')
-    sim_at_final = get_similarities(at_final, activation_matrix)
+    output_measures.append(str(get_similarities(at_final, activation_matrix)))
 
 
     at_10_model = load_snapshot(input_name, at_10_filename, model_cls)
-    wc_at_10 = get_mean_abs_weight_difference(model, at_10_model)
+    output_measures.append(str(get_mean_abs_weight_difference(model, at_10_model)))
 
     at_100_model = load_snapshot(input_name, at_100_filename, model_cls)
-    wc_at_100 = get_mean_abs_weight_difference(model, at_100_model)
+    output_measures.append(str(get_mean_abs_weight_difference(model, at_100_model)))
+    
 
     at_init_model = load_snapshot(input_name, 'init', model_cls)
-    wc_at_init = get_mean_abs_weight_difference(model, at_init_model)
+    output_measures.append(str(get_mean_abs_weight_difference(model, at_init_model)))
 
     at_final_model = load_snapshot(input_name, 'final', model_cls)
-    wc_at_final = get_mean_abs_weight_difference(model, at_final_model)
+    output_measures.append(str(get_mean_abs_weight_difference(model, at_final_model)))
 
-    output(",".join([
-        str(epoch), 
-        str(batch_idx),
-        str(test_acc),
-        str(unique_ap),
-
-        str(np.mean(sim_at_10)),
-        str(np.std(sim_at_10)),
-        str(np.mean(sim_at_100)),
-        str(np.std(sim_at_100)),
-        str(np.mean(sim_at_init)),
-        str(np.std(sim_at_init)),
-        str(np.mean(sim_at_final)),
-        str(np.std(sim_at_final)),
-
-        str(wc_at_10.mean().item()),
-        str(wc_at_10.std().item()),
-        str(wc_at_100.mean().item()),
-        str(wc_at_100.std().item()),   
-        str(wc_at_init.mean().item()),
-        str(wc_at_init.std().item()),   
-        str(wc_at_final.mean().item()),
-        str(wc_at_final.std().item()),         
-        ]))
+    output(",".join(output_measures))
 
 
 def delete_unused(old, new, input_name):

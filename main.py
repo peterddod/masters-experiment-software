@@ -3,22 +3,12 @@ Script for running experiments.
 
 Part of MSci Project for Peter Dodd @ University of Glasgow.
 """
-import torch
 import os
-import sys
-from torch import nn
-import torch.nn.functional as F
-import torch.optim as optim
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
-import numpy as np  
 from time import time
 from datetime import datetime
 from utils import *
 import argparse
-import torch.multiprocessing as mp
 from src.train import *
-from src.analysis import analyse_model, extract
 import warnings
 import json
 from config import *
@@ -34,6 +24,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--filename", default=f'{datetime.now().strftime("%d.%m.%Y %H.%M.%S")}', help="Name of output folder")
 parser.add_argument("-s", "--seed", default=1, help="Seed to run experiment on", type=int)
 parser.add_argument("-sr", "--samplerate", default=10, help="Seed to run experiment on", type=int)
+parser.add_argument("-ds", "--dataset", default='mnist', help="Dataset to train with")
 
 
 ### TRAINING PARAMETERS
@@ -62,36 +53,12 @@ if __name__ == '__main__':
 
     optimiser = optimiser_map[args.optimiser](model.parameters(), lr=args.theta)
 
-    pattern_data = datasets.MNIST('./dataset', train=True, download=True,
-            transform=transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize((0.1307,), (0.3081,))
-            ])).data.reshape([60000,1,28,28]).to(torch.float32)
-
     os.mkdir(f'./results/{args.filename}/')
     os.mkdir(f'./results/{args.filename}/snapshots/')
 
     file = FileWriter(f'./results/{args.filename}/log.csv', ",".join(['epoch','step','train_loss','test_accuracy']))
 
-    train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('./dataset', train=True, download=True,
-            transform=transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize((0.1307,), (0.3081,))
-            ])),
-        batch_size=args.batchsize, 
-        shuffle=True,
-    )
-
-    test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('./dataset', train=False, download=True,
-            transform=transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize((0.1307,), (0.3081,))
-            ])),
-        batch_size=256, 
-        shuffle=False,
-    )
+    train_loader, test_loader = get_train_loaders(args.dataset, args.batchsize)
 
     info_dictionary = {
         'script_parameters': {
