@@ -6,18 +6,19 @@ Part of MSci Project for Peter Dodd @ University of Glasgow.
 import torch
 
 
-def run_epoch(model, optimiser, loss, train_datapoint, test_data, target, epoch, batch_idx, file):
-    loss = train_step(model, optimiser, loss, train_datapoint, target)
-    accuracy = 0  # evaluate_epoch(model, test_data)
+def run_epoch(model, optimiser, loss, train_datapoint, test_data, target, epoch, batch_idx, file, device):
+    loss = train_step(model, optimiser, loss, train_datapoint, target, device)
+    accuracy = 0
 
     file( ",".join([str(epoch),str(batch_idx),str(loss),str(accuracy)]))
 
     if batch_idx % 10 == 0:    
-        accuracy = evaluate_epoch(model, test_data)  
+        accuracy = evaluate_epoch(model, test_data, device)  
         print(f'Epoch {epoch}, Batch: {batch_idx}, Loss: {loss}, Accuracy: {accuracy}')
 
 
-def train_step(model, optimiser, loss, data, target):
+def train_step(model, optimiser, loss, data, target, device):
+    data, target = data.to(device), target.to(device)
     model.train()
     optimiser.zero_grad()
     output = model(data)
@@ -27,7 +28,7 @@ def train_step(model, optimiser, loss, data, target):
 
     return output.item()
 
-def evaluate_epoch(model, dataloader):
+def evaluate_epoch(model, dataloader, device):
     model.eval()
 
     correct = 0
@@ -35,6 +36,7 @@ def evaluate_epoch(model, dataloader):
 
     with torch.no_grad():
         for data, target in dataloader:
+            data, target = data.to(device), target.to(device)
             output = model(data)
 
             total += data.size(0)

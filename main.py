@@ -46,6 +46,7 @@ parser.add_argument("-o", "--optimiser", default='sgd', help="Optimiser for trai
 parser.add_argument("-l", "--loss", default='nll', help="Loss function for training")
 parser.add_argument("-t", "--theta", default=0.01, help="Learning rate", type=float)
 parser.add_argument("-w", "--weight_decay", default=0, help="Weight decay", type=float)
+parser.add_argument("-d", "--device", default='cpu', help="Device for training")
 
 
 ### SCRIPT
@@ -58,6 +59,8 @@ if __name__ == '__main__':
     resetseed(args.seed)
 
     model = model_map[args.model]()
+    model.to(args.device)
+    
     optimiser = optimiser_map[args.optimiser](model.parameters(), lr=args.theta)
 
     pattern_data = datasets.MNIST('./dataset', train=True, download=True,
@@ -122,23 +125,9 @@ if __name__ == '__main__':
                 data, test_loader,
                 target, epoch,
                 batch_idx,
-                file
+                file,
+                args.device
             )
-            # if args.process:
-            #     p_pattern_analysis = mp.Process(target=extract, args=(
-            #         model.state_dict(),
-            #         model_map[args.model],
-            #         skip_idxs,
-            #         activation_idxs,
-            #         pattern_data,
-            #         pattern_file,
-            #     )) 
-            # else:
-            #     p_pattern_analysis = mp.Process(target=save_state_dict, args=(
-            #         model.state_dict(),
-            #         f'./results/{args.filename}/snapshots/{epoch}_{batch_idx}.pt'
-            #     )) 
-
 
             if take_snapshot:
                 save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/{epoch}_{batch_idx}.pt')
