@@ -33,7 +33,6 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("-f", "--filename", default=f'{datetime.now().strftime("%d.%m.%Y %H.%M.%S")}', help="Name of output folder")
 parser.add_argument("-s", "--seed", default=1, help="Seed to run experiment on", type=int)
-parser.add_argument("-p", "--process", help="Process patterns into byte output file - stops saving model snapshots", action='store_true')
 parser.add_argument("-sr", "--samplerate", default=10, help="Seed to run experiment on", type=int)
 
 
@@ -60,7 +59,7 @@ if __name__ == '__main__':
 
     model = model_map[args.model]()
     model.to(args.device)
-    
+
     optimiser = optimiser_map[args.optimiser](model.parameters(), lr=args.theta)
 
     pattern_data = datasets.MNIST('./dataset', train=True, download=True,
@@ -70,14 +69,9 @@ if __name__ == '__main__':
             ])).data.reshape([60000,1,28,28]).to(torch.float32)
 
     os.mkdir(f'./results/{args.filename}/')
-    if not args.process: 
-        os.mkdir(f'./results/{args.filename}/snapshots/')
-    else:
-        pattern_file = ByteWriter(f'./results/{args.filename}/patterns.bin')
+    os.mkdir(f'./results/{args.filename}/snapshots/')
 
     file = FileWriter(f'./results/{args.filename}/log.csv', ",".join(['epoch','step','train_loss','test_accuracy']))
-
-    if args.process: activation_idxs, skip_idxs, layer_output_sizes = analyse_model(model, pattern_data, pattern_file)
 
     train_loader = torch.utils.data.DataLoader(
         datasets.MNIST('./dataset', train=True, download=True,
@@ -106,13 +100,10 @@ if __name__ == '__main__':
         'dataset_size': len(train_loader.dataset)
     }
 
-    if args.process: info_dictionary['layer_output_sizes'] = layer_output_sizes
-
     total = 0
     loss = loss_map[args.loss]()
 
-    if not args.process:
-        save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/init.pt')
+    save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/init.pt')
 
     updates_in_epoch = info_dictionary['dataset_size'] // args.batchsize
 
@@ -132,9 +123,7 @@ if __name__ == '__main__':
             if take_snapshot:
                 save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/{epoch}_{batch_idx}.pt')
 
-
-    if not args.process:
-        save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/final.pt')
+    save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/final.pt')
 
     t_end = time()
 
