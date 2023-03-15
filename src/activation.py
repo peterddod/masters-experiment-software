@@ -230,7 +230,7 @@ def process_statistics(filename, output, test_dataloader, input_name, model_cls,
 
     output_measures.append(str(epoch))
     output_measures.append(str(batch_idx))
-    output_measures.append(str(epoch))
+    output_measures.append(str(test_acc))
 
     activation_matrix = torch.load(f'./processed/{input_name}/.cache/{filename}.pt').detach()
 
