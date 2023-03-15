@@ -4,7 +4,7 @@ from torch import nn
 from time import time
 from torch import multiprocessing as mp
 from patternanalysis import PatternCounter
-from train import evaluate_epoch
+from src.train import evaluate_epoch
 from functools import partial
 from patternanalysis import BinaryPathTree
 import os

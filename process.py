@@ -8,7 +8,7 @@ from datetime import datetime
 from time import time
 import json
 import numpy as np
-from activation import cache_pattern_matrix, delete_unused, get_filenames_to_process, get_prev, make_activation_matrix, process_statistics
+from src.activation import cache_pattern_matrix, delete_unused, get_filenames_to_process, get_prev, make_activation_matrix, process_statistics
 from utils import FileWriter, ceil_to_factor
 import torch.multiprocessing as mp
 from config import *

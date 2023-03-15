@@ -17,8 +17,8 @@ from datetime import datetime
 from utils import *
 import argparse
 import torch.multiprocessing as mp
-from train import *
-from analysis import analyse_model, extract
+from src.train import *
+from src.analysis import analyse_model, extract
 import warnings
 import json
 from config import *
