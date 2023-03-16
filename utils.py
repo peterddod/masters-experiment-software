@@ -4,6 +4,7 @@ import numpy as np
 from torch import nn
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
+from PIL import Image
 
 
 class FileWriter():
@@ -87,6 +88,53 @@ def he_init(m):
     init_weights(m, nn.init.kaiming_normal_, params_dict={'mode':'fan_in', 'nonlinearity':'relu'})
 
 
+class Cutout(object):
+    """
+    Implements Cutout regularization as proposed by DeVries and Taylor (2017), https://arxiv.org/pdf/1708.04552.pdf.
+    """
+
+    def __init__(self, num_cutouts, size, p=0.5):
+        """
+        Parameters
+        ----------
+        num_cutouts : int
+            The number of cutouts
+        size : int
+            The size of the cutout
+        p : float (0 <= p <= 1)
+            The probability that a cutout is applied (similar to keep_prob for Dropout)
+        """
+        self.num_cutouts = num_cutouts
+        self.size = size
+        self.p = p
+
+    def __call__(self, img):
+
+        height, width = img.size
+
+        cutouts = np.ones((height, width))
+
+        if np.random.uniform() < 1 - self.p:
+            return img
+
+        for i in range(self.num_cutouts):
+            y_center = np.random.randint(0, height)
+            x_center = np.random.randint(0, width)
+
+            y1 = np.clip(y_center - self.size // 2, 0, height)
+            y2 = np.clip(y_center + self.size // 2, 0, height)
+            x1 = np.clip(x_center - self.size // 2, 0, width)
+            x2 = np.clip(x_center + self.size // 2, 0, width)
+
+            cutouts[y1:y2, x1:x2] = 0
+
+        cutouts = np.broadcast_to(cutouts, (3, height, width))
+        cutouts = np.moveaxis(cutouts, 0, 2)
+        img = np.array(img)
+        img = img * cutouts
+        return Image.fromarray(img.astype('uint8'), 'RGB')
+
+
 def get_train_loaders(dataset, batchsize=64):
     if dataset == 'mnist':
         train_loader = torch.utils.data.DataLoader(
@@ -115,8 +163,11 @@ def get_train_loaders(dataset, batchsize=64):
         train_loader = torch.utils.data.DataLoader(
             datasets.CIFAR10('./dataset', train=True, download=True,
                 transform=transforms.Compose([
+                    Cutout(num_cutouts=2, size=8, p=0.8),
+                    transforms.RandomCrop(32, padding=4),
+                    transforms.RandomHorizontalFlip(),
                     transforms.ToTensor(),
-                    transforms.Normalize((0.1307,), (0.3081,))
+                    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
                 ])),
             batch_size=batchsize, 
             shuffle=True,
@@ -126,7 +177,7 @@ def get_train_loaders(dataset, batchsize=64):
             datasets.CIFAR10('./dataset', train=False, download=True,
                 transform=transforms.Compose([
                     transforms.ToTensor(),
-                    transforms.Normalize((0.1307,), (0.3081,))
+                    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
                 ])),
             batch_size=256, 
             shuffle=False,
@@ -147,5 +198,5 @@ def get_pattern_data(dataset):
         return datasets.CIFAR10('./dataset', train=True, download=True,
             transform=transforms.Compose([
                 transforms.ToTensor(),
-                transforms.Normalize((0.1307,), (0.3081,))
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
             ])).data.reshape([50000,3,28,28]).to(torch.float32)

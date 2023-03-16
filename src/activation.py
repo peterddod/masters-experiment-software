@@ -94,7 +94,7 @@ def get_number_of_unique_patterns(activation_matrix):
     activation_matrix_hash = map(convert_func, activation_matrix)
     counter = Counter(activation_matrix_hash)
 
-    return len(counter.keys()) 
+    return len(counter.keys())  
 
 
 def cos_sim(a, b):
@@ -237,32 +237,47 @@ def process_statistics(filename, output, test_dataloader, input_name, model_cls,
     if measure_unique_patterns: output_measures.append(str(get_number_of_unique_patterns(activation_matrix)))
 
     at_10 = load_cached_pattern(input_name, at_10_filename)
-    output_measures.append(str(get_similarities(at_10, activation_matrix)))
+    sim_at_10 = get_similarities(at_10, activation_matrix)
+    output_measures.append(np.mean(sim_at_10))
+    output_measures.append(np.std(sim_at_10))
 
     at_100 = load_cached_pattern(input_name, at_100_filename)
-    output_measures.append(str(get_similarities(at_100, activation_matrix)))
+    sim_at_100 = get_similarities(at_100, activation_matrix)
+    output_measures.append(np.mean(sim_at_100))
+    output_measures.append(np.std(sim_at_100))
 
     at_init = load_cached_pattern(input_name, 'init')
-    output_measures.append(str(get_similarities(at_init, activation_matrix)))
+    sim_at_init = get_similarities(at_init, activation_matrix)
+    output_measures.append(np.mean(sim_at_init))
+    output_measures.append(np.std(sim_at_init))
 
     at_final = load_cached_pattern(input_name, 'final')
-    output_measures.append(str(get_similarities(at_final, activation_matrix)))
+    sim_at_final = get_similarities(at_final, activation_matrix)
+    output_measures.append(np.mean(sim_at_final))
+    output_measures.append(np.std(sim_at_final))
 
 
     at_10_model = load_snapshot(input_name, at_10_filename, model_cls)
-    output_measures.append(str(get_mean_abs_weight_difference(model, at_10_model)))
+    wc_at_10 = get_mean_abs_weight_difference(model, at_10_model)
+    output_measures.append(wc_at_10.mean().item())
+    output_measures.append(wc_at_10.std().item())
 
     at_100_model = load_snapshot(input_name, at_100_filename, model_cls)
-    output_measures.append(str(get_mean_abs_weight_difference(model, at_100_model)))
-    
+    wc_at_100 = get_mean_abs_weight_difference(model, at_100_model)
+    output_measures.append(wc_at_100.mean().item())
+    output_measures.append(wc_at_100.std().item())
 
     at_init_model = load_snapshot(input_name, 'init', model_cls)
-    output_measures.append(str(get_mean_abs_weight_difference(model, at_init_model)))
+    wc_at_init = get_mean_abs_weight_difference(model, at_init_model)
+    output_measures.append(wc_at_init.mean().item())
+    output_measures.append(wc_at_init.std().item())
 
     at_final_model = load_snapshot(input_name, 'final', model_cls)
-    output_measures.append(str(get_mean_abs_weight_difference(model, at_final_model)))
+    wc_at_final = get_mean_abs_weight_difference(model, at_final_model)
+    output_measures.append(wc_at_final.mean().item())
+    output_measures.append(wc_at_final.std().item())
 
-    output(",".join(output_measures))
+    output(",".join([str(x) for x in output_measures]))
 
 
 def delete_unused(old, new, input_name):

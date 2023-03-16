@@ -18,7 +18,7 @@ parser.add_argument("-f", "--filename", default=None, help="Name of output file"
 parser.add_argument("-ds", "--dataset", default='mnist', help="Dataset to train with")
 parser.add_argument("-b", "--batchsize", default=10, help="Number of patterns to cache and process", type=int)
 
-parser.add_argument("-u", "--uniquepatterns", default=True, help="Controls whether or not to record number of unique patterns measure (turn this off in large networks)", type=bool)
+parser.add_argument("-u", "--uniquepatterns", action='store_false', help="Controls whether or not to record number of unique patterns measure (turn this off in large networks)")
 parser.add_argument("-s", "--samplerate", default=10, help="Gap between gradient updates for comparisons", type=int)
 parser.add_argument("-d", "--device", default='cpu', help="Device for processing")
 
