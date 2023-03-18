@@ -28,9 +28,14 @@ fc_process:
 lenet_process:
 	python process.py -i exp_lenet -f exp_lenet -s 10
 
+resnet_process:
+	python process.py -i exp_resnet -f exp_resnet -s 10
+
 exp_train: fc_experiment lenet_experiment
 
 exp_process: fc_process lenet_process
+
+resnet: resnet_experiment resnet_process
 
 fc_exp_test:
 	rm -rf processed/exp_fc_t
