@@ -3,7 +3,7 @@ import random
 import numpy as np  
 from torch import nn
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from PIL import Image
 
 
@@ -135,10 +135,10 @@ class Cutout(object):
         return Image.fromarray(img.astype('uint8'), 'RGB')
 
 
-def get_train_loaders(dataset, batchsize=64):
+def get_train_loaders(dataset, batchsize=64, seed=None, n=None):
     if dataset == 'mnist':
         train_loader = torch.utils.data.DataLoader(
-            datasets.MNIST('./dataset', train=True, download=True,
+            datasets.MNIST('./dataset', train=True, download=True, 
                 transform=transforms.Compose([
                     transforms.ToTensor(),
                     transforms.Normalize((0.1307,), (0.3081,))
@@ -160,26 +160,38 @@ def get_train_loaders(dataset, batchsize=64):
         return train_loader, test_loader
     
     elif dataset == 'cifar10':
+        random.seed(seed)
+        if n!= None:
+            indices = random.sample(range(0, 50000), n)
+        else:
+            indices = range(0, 50000)
+
         train_loader = torch.utils.data.DataLoader(
-            datasets.CIFAR10('./dataset', train=True, download=True,
+            Subset(datasets.CIFAR10('./dataset', train=True, download=True,
                 transform=transforms.Compose([
                     Cutout(num_cutouts=2, size=8, p=0.8),
                     transforms.RandomCrop(32, padding=4),
                     transforms.RandomHorizontalFlip(),
                     transforms.ToTensor(),
                     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-                ])),
+                ])), indices),
             batch_size=batchsize, 
             shuffle=True,
         )
 
+        random.seed(seed)
+        if n!= None:
+            indices = random.sample(range(0, 10000), n)
+        else:
+            indices = range(0, 10000)
+
         test_loader = torch.utils.data.DataLoader(
-            datasets.CIFAR10('./dataset', train=False, download=True,
+            Subset(datasets.CIFAR10('./dataset', train=False, download=True,
                 transform=transforms.Compose([
                     transforms.ToTensor(),
                     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-                ])),
-            batch_size=256, 
+                ])), indices),
+            batch_size=250, 
             shuffle=False,
         )
 
@@ -195,8 +207,8 @@ def get_pattern_data(dataset):
             ])).data.reshape([60000,1,28,28]).to(torch.float32)
     
     elif dataset == 'cifar10':
-        return datasets.CIFAR10('./dataset', train=True, download=True,
+        return torch.Tensor(datasets.CIFAR10('./dataset', train=True, download=True,
             transform=transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-            ])).data.reshape([50000,3,28,28]).to(torch.float32)
+            ])).data.reshape([50000,3,32,32])).to(torch.float32)

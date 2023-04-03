@@ -51,7 +51,7 @@ def get_filenames_to_process(samplerate, comparisons, batch_size, batch_idx, upd
     return output_list
 
 
-def extract(model, data):
+def extract(model, dataloader, device):
     """
     Extract activation patterns from model using data and return as
     torch tensor.
@@ -59,14 +59,18 @@ def extract(model, data):
     model.eval()
 
     _output = []
+    _model_out = []
 
     def hook(model, input, output):
-        _output.append(output.flatten(1))
+        _model_out.append(output.flatten(1).detach())
         return
 
     model.apply_activation_hook(hook)
 
-    model(data)
+    for data, target in dataloader:
+        data = data.to(device)
+        model(data)
+        _output.append(torch.hstack(_model_out).detach())
 
     _output = torch.hstack(_output).detach()
 
@@ -75,7 +79,7 @@ def extract(model, data):
     return _output
 
 
-def cache_pattern_matrix(filename, input_name, data, model_cls):
+def cache_pattern_matrix(filename, input_name, data, model_cls, device):
     """
     Produces activation patterns matrix from a saved model when using a dataset and saves
     a .pt to the specifed path.
@@ -84,8 +88,9 @@ def cache_pattern_matrix(filename, input_name, data, model_cls):
     model_path = f'./results/{input_name}/snapshots/{filename}.pt'
     cache_path = f'./processed/{input_name}/.cache/{filename}.pt'
     model = model_cls()
-    model.load_state_dict(torch.load(model_path))
-    activation_matrix = extract(model, data)
+    model.to(device)
+    model.load_state_dict(torch.load(model_path, map_location=torch.device(device)))
+    activation_matrix = extract(model, data, device)
     torch.save(activation_matrix, cache_path)
 
 
@@ -116,7 +121,7 @@ def get_similarities(m1, m2, compareFunction=cos_sim):
 def load_cached_pattern(inputname, filename):
     output = None
     try:
-        output = torch.load(f'./processed/{inputname}/.cache/{filename}.pt').detach()
+        output = torch.load(f'./processed/{inputname}/.cache/{filename}.pt', map_location=torch.device('cpu')).detach()
     except Exception as e:
         print(e)
         pass
@@ -128,7 +133,7 @@ def load_snapshot(inputname, filename, model_cls):
     output = None
     try:
         model = model_cls()
-        model.load_state_dict(torch.load(f'./results/{inputname}/snapshots/{filename}.pt'))
+        model.load_state_dict(torch.load(f'./results/{inputname}/snapshots/{filename}.pt', map_location=torch.device('cpu')))
         output = model
 
     except Exception as e:
@@ -225,7 +230,7 @@ def process_statistics(filename, output, test_dataloader, input_name, model_cls,
     batch_idx = int(split[1])
 
     model = model_cls()
-    model.load_state_dict(torch.load(f'./results/{input_name}/snapshots/{filename}.pt'))
+    model.load_state_dict(torch.load(f'./results/{input_name}/snapshots/{filename}.pt', map_location=torch.device('cpu')))
     test_acc = evaluate_epoch(model, test_dataloader, device)
 
     output_measures.append(str(epoch))

@@ -17,6 +17,17 @@ def run_epoch(model, optimiser, loss, train_datapoint, test_data, target, epoch,
         print(f'Epoch {epoch}, Batch: {batch_idx}, Loss: {loss}, Accuracy: {accuracy}')
 
 
+def run_step_w_acc(model, optimiser, loss, train_datapoint, test_data, train_data, target, epoch, batch_idx, file, device):
+    loss = train_step(model, optimiser, loss, train_datapoint, target, device)
+
+    if batch_idx % 10 == 0:    
+        test_accuracy = evaluate_epoch(model, test_data, device)
+        train_accuracy = 0 #evaluate_epoch(model, train_data, device)
+
+        file(",".join([str(epoch),str(batch_idx),str(loss),str(test_accuracy),str(train_accuracy)]))
+        print(f'Epoch {epoch}, Batch: {batch_idx}, Loss: {loss}, Accuracy: {test_accuracy}')
+
+
 def train_step(model, optimiser, loss, data, target, device):
     model.train()
     data, target = data.to(device), target.to(device)

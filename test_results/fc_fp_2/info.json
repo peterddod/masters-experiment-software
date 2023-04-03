@@ -1,0 +1,19 @@
+{
+    "script_parameters": {
+        "filename": "fc_fp_2",
+        "seed": 1,
+        "samplerate": 10,
+        "dataset": "mnist",
+        "epochs": 3,
+        "batchsize": 32,
+        "model": "small_fc",
+        "optimiser": "adam",
+        "loss": "crossentropy",
+        "theta": 0.0003,
+        "weight_decay": 1e-05,
+        "freezepoint": 2,
+        "device": "cpu"
+    },
+    "dataset_size": 60000,
+    "execution_time": 339.2892861366272
+}

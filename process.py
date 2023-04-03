@@ -21,6 +21,8 @@ parser.add_argument("-b", "--batchsize", default=10, help="Number of patterns to
 parser.add_argument("-u", "--uniquepatterns", action='store_false', help="Controls whether or not to record number of unique patterns measure (turn this off in large networks)")
 parser.add_argument("-s", "--samplerate", default=10, help="Gap between gradient updates for comparisons", type=int)
 parser.add_argument("-d", "--device", default='cpu', help="Device for processing")
+parser.add_argument("-S", "--seed", default=None, help="Seed for subsampling similarity dataset", type=int)
+parser.add_argument("-n", default=None, help="Number of samples to use for activation comparison", type=int)
 
 
 if __name__ == '__main__':
@@ -56,19 +58,20 @@ if __name__ == '__main__':
     # create output file
     output = FileWriter(f'./processed/{filename}/processed.csv', ",".join(measures))
     
-    
     # 1. find range of updates required to process one set of stats 
     model_cls = model_map[experiment_info['script_parameters']['model']]
 
-    pattern_data = get_pattern_data(args.dataset)
-    test_loader = get_train_loaders(args.dataset)[1]
+    # pattern_data = get_pattern_data(args.dataset)
+    test_loader = get_train_loaders(args.dataset, seed=args.seed, n=args.n)[1]
+
+    print(len(test_loader.dataset))
 
     comparisons = [1,10]  # how many update steps between comparisons
     batch_idx = 0
 
     # cache patterns for absolute similarity checks
-    cache_pattern_matrix('init', args.input, pattern_data, model_cls)  # pattern matrix at initialisation
-    cache_pattern_matrix('final', args.input, pattern_data, model_cls)  # final pattern matrix
+    cache_pattern_matrix('init', args.input, test_loader, model_cls, args.device)  # pattern matrix at initialisation
+    cache_pattern_matrix('final', args.input, test_loader, model_cls, args.device)  # final pattern matrix
 
     updates_in_epoch = experiment_info['dataset_size'] // experiment_info['script_parameters']['batchsize']
     total_number_of_updates = updates_in_epoch * experiment_info['script_parameters']['epochs']
@@ -89,8 +92,9 @@ if __name__ == '__main__':
         func = lambda filename: cache_pattern_matrix(
             filename,
             args.input,
-            pattern_data,
-            model_cls)
+            test_loader,
+            model_cls, 
+            args.device)
         
         # map(func, storage_window_filenames)
         for x in storage_window_filenames: func(x)
