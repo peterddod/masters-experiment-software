@@ -15,25 +15,22 @@ class FreezeNet(nn.Module):
         self.module_to_patterns_map = {}
         self.activate = nn.ReLU()
 
-        def record(layer_name):
+        def record_activation_pattern(layer_name):
             def hook(model, input, output):
                 output = self.activate(output.detach())  # ReLU not added in model as hook added to lin/conv layers directly
                 output[output!=0] = 1
                 self.module_to_patterns_map[layer_name] = output
             return hook
 
-        self.pattern_selector.apply_forward_hook(record)
+        self.pattern_selector.apply_forward_hook(record_activation_pattern)
 
         self.model = model
 
         def grad_func(layer_name):
-            def hook(grad):
-                activation_grad = self.module_to_patterns_map[layer_name].mean(0)
-                print(f'-------------------- {layer_name}')
-                print(self.module_to_patterns_map[layer_name].shape)
-                print(activation_grad.shape)
-                print(grad.shape)
-                return (grad.T*activation_grad).T
+            def hook(module, grad_in, grad_out):
+                activation_grad = self.module_to_patterns_map[layer_name]
+                grad_out_mod = tuple([grad_out[0]*activation_grad])
+                return grad_out_mod
             return hook
 
         self.model.apply_hook(grad_func)
@@ -49,6 +46,5 @@ class FreezeNet(nn.Module):
     def forward(self, x):
         with torch.no_grad():
             self.pattern_selector(x)
-
         x = self.model(x)
         return x

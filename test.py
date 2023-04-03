@@ -69,8 +69,8 @@ if __name__ == '__main__':
 
     resetseed(args.seed)
 
-    model = TestModelLeNet5()
-    m = TestModelLeNet5()
+    model = TestModelFC()
+    m = TestModelFC()
     # model.to(args.device)
 
     optimiser = optimiser_map[args.optimiser](list(model.parameters()) + list(m.parameters()), lr=args.theta)
