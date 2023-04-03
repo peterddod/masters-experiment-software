@@ -17,7 +17,7 @@ class FreezeNet(nn.Module):
 
         def record(layer_name):
             def hook(model, input, output):
-                output = self.activate(output.detach())
+                output = self.activate(output.detach())  # ReLU not added in model as hook added to lin/conv layers directly
                 output[output!=0] = 1
                 self.module_to_patterns_map[layer_name] = output
             return hook
@@ -29,7 +29,11 @@ class FreezeNet(nn.Module):
         def grad_func(layer_name):
             def hook(grad):
                 activation_grad = self.module_to_patterns_map[layer_name].mean(0)
-                return grad*activation_grad
+                print(f'-------------------- {layer_name}')
+                print(self.module_to_patterns_map[layer_name].shape)
+                print(activation_grad.shape)
+                print(grad.shape)
+                return (grad.T*activation_grad).T
             return hook
 
         self.model.apply_hook(grad_func)

@@ -33,8 +33,13 @@ class TestModelFC(nn.Module):
 
     def apply_hook(self, func):
         self.lin1.bias.register_hook(func('lin1'))
+        self.lin1.weight.register_hook(func('lin1'))
+
         self.lin2.bias.register_hook(func('lin2'))
+        self.lin2.weight.register_hook(func('lin2'))
+
         self.lin3.bias.register_hook(func('lin3'))
+        self.lin3.weight.register_hook(func('lin3'))        
 
 
     def apply_forward_hook(self, func):
