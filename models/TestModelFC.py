@@ -6,7 +6,7 @@ class TestModelFC(nn.Module):
     def __init__(self):
         super(TestModelFC, self).__init__()
 
-        self.activate = nn.ReLU
+        self.activate = nn.Identity
 
         self.flat = nn.Flatten()
         self.lin1 = nn.Linear(28*28,24)
@@ -47,9 +47,9 @@ class TestModelFC(nn.Module):
     
 
     def apply_hook(self, func):
-        self.af1.register_full_backward_hook(func('af1'))
-        self.af2.register_full_backward_hook(func('af2'))
-        self.af3.register_full_backward_hook(func('af3')) 
+        self.lin1.register_full_backward_pre_hook(func('af1'))
+        self.lin2.register_full_backward_pre_hook(func('af2'))
+        self.lin3.register_full_backward_pre_hook(func('af3')) 
 
 
     def apply_forward_hook(self, func):

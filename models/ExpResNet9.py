@@ -4,6 +4,7 @@ Code adapted from: https://github.com/matthias-wright/cifar10-resnet/blob/master
 
 import torch.nn as nn
 from collections import OrderedDict
+from utils import *
 
 
 class ResidualBlock(nn.Module):
@@ -30,23 +31,26 @@ class ResidualBlock(nn.Module):
         else:
             self.downsample = None
 
-        self.relu = nn.ReLU(inplace=False)
+        self.relu1 = nn.ReLU(inplace=False)
+        self.relu2 = nn.ReLU(inplace=False)
+
 
     def forward(self, x):
         residual = x
 
-        out = self.relu(self.conv_res1_bn(self.conv_res1(x)))
+        out = self.relu1(self.conv_res1_bn(self.conv_res1(x)))
         out = self.conv_res2_bn(self.conv_res2(out))
 
         if self.downsample is not None:
             residual = self.downsample(residual)
 
-        out = self.relu(out)
+        out = self.relu2(out)
 
         return out + residual
     
     def apply_activation_hook(self, func):
-        self.relu.register_forward_hook(func)
+        self.relu1.register_forward_hook(func)
+        self.relu2.register_forward_hook(func)
 
 
 class ExpResNet9(nn.Module):
@@ -79,9 +83,15 @@ class ExpResNet9(nn.Module):
             ('lin',nn.Linear(in_features=1024, out_features=10, bias=True))
         ]))
 
+        self.conv.apply(he_init)
+        self.conv.res1.apply(he_init)
+        self.conv.res2.apply(he_init)
+
+    
     def forward(self, x):
         return self.conv(x)
     
+
     def apply_activation_hook(self, func):
         self.conv.relu1.register_forward_hook(func)
         self.conv.relu2.register_forward_hook(func)

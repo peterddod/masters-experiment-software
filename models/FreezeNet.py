@@ -27,10 +27,11 @@ class FreezeNet(nn.Module):
         self.model = model
 
         def grad_func(layer_name):
-            def hook(module, grad_in, grad_out):
+            def hook(module, grad_out):
                 activation_grad = self.module_to_patterns_map[layer_name]
                 grad_out_mod = tuple([grad_out[0]*activation_grad])
-                return grad_out_mod
+                # print(grad_out_mod)
+                # return grad_out_mod
             return hook
 
         self.model.apply_hook(grad_func)

@@ -48,8 +48,8 @@ lenet_exp_test:
 exp: exp_train exp_process
 
 test_len:
-	rm -rf test_results/test_fc_2
-	python test.py -f test_fc_2 -b 32 -t 0.0003 -o adam -e 3 -l crossentropy -s 1 -w 0.00001 -sr 10 -ds mnist -fp 2
+	rm -rf test_results/test_fc
+	python test.py -f test_fc -b 32 -t 0.0003 -o adam -e 3 -l crossentropy -s 1 -w 0.00001 -sr 10 -ds mnist -fp 1
 
 run_test_exp:
 	python test.py -f fc_plain -b 32 -t 0.0003 -o adam -e 3 -l crossentropy -s 1 -w 0.00001 -sr 10 -ds mnist -fp 0
