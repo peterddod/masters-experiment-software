@@ -47,11 +47,8 @@ class TestModelResNet9(nn.Module):
         self.af4 = self.activate()
 
 
-    def set_relu(self, set_relu=True):
-        if set_relu:
-            self.activate = nn.ReLU
-        else:
-            self.activate = nn.Identity
+    def set_activate(self, activate):
+        self.activate = activate
 
         self.reset_activation_func()
     

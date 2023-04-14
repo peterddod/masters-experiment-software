@@ -1,5 +1,6 @@
 from .SmallFC import SmallFC
 from .FreezeNet import FreezeNet
+from .FreezeNet import Activator
 
 from .ExpModelFC import ExpModelFC
 from .ExpLeNet5 import ExpLeNet5

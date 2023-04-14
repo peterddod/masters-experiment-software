@@ -40,20 +40,17 @@ class TestModelLeNet5(nn.Module):
         return x
     
 
-    def reset_activation_func(self):
-        self.af1 = self.activate()
-        self.af2 = self.activate()
-        self.af3 = self.activate()
-        self.af4 = self.activate()
+    def reset_activation_func(self, **kwargs):
+        self.af1 = self.activate(**kwargs)
+        self.af2 = self.activate(**kwargs)
+        self.af3 = self.activate(**kwargs)
+        self.af4 = self.activate(**kwargs)
 
 
-    def set_relu(self, set_relu=True):
-        if set_relu:
-            self.activate = nn.ReLU
-        else:
-            self.activate = nn.Identity
+    def set_activate(self, activate, **kwargs):
+        self.activate = activate
 
-        self.reset_activation_func()
+        self.reset_activation_func(**kwargs)
     
 
     def apply_hook(self, func):

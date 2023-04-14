@@ -31,7 +31,7 @@ import warnings
 import json
 from config import *
 
-from models import TestModelFC, TestModelLeNet5, TestModelAFFC, ExpModelFC, FreezeNet
+from models import TestModelFC, TestModelLeNet5, TestModelAFFC, ExpModelFC, FreezeNet, Activator
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -69,8 +69,8 @@ if __name__ == '__main__':
 
     resetseed(args.seed)
 
-    model = TestModelFC()
-    m = TestModelFC()
+    model = TestModelLeNet5()
+    m = TestModelLeNet5()
     # model.to(args.device)
 
     optimiser = optimiser_map[args.optimiser](list(model.parameters()) + list(m.parameters()), lr=args.theta)
@@ -94,9 +94,9 @@ if __name__ == '__main__':
     for epoch in range(1, args.epochs+1):
         if epoch == args.freezepoint:
             m.load_state_dict(model.state_dict())
-            m.set_relu(False)
             model = FreezeNet(model, m)
-            # optimiser = optimiser_map[args.optimiser](model.parameters(), lr=args.theta)
+            model.model.set_activate(Activator, get_activation_matrix=model.get_activation_matrix)
+            optimiser = optimiser_map[args.optimiser](model.parameters(), lr=args.theta)
 
         for batch_idx, (data, target) in enumerate(train_loader):
             run_step_w_acc(
