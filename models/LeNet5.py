@@ -1,25 +1,24 @@
-from collections import OrderedDict
 from torch import nn
-import torch
+from utils import he_init
 
-class TestModelLeNet5(nn.Module):
-    def __init__(self):
-        super(TestModelLeNet5, self).__init__()
 
-        self.activate = nn.ReLU
+class LeNet5(nn.Module):
+    def __init__(self, activate=nn.ReLU):
+        super(LeNet5, self).__init__()
+
+        self.activate = activate
+        self.reset_activation_func()
 
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=6, kernel_size=5, padding=2)
-        self.af1 = self.activate()
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.conv2 = nn.Conv2d(in_channels=6, out_channels=16, kernel_size=5)
-        self.af2 = self.activate()
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.flat = nn.Flatten()
         self.lin1 = nn.Linear(400, 120)
-        self.af3 = self.activate()
         self.lin2 = nn.Linear(120, 84)
-        self.af4 = self.activate()
         self.lin3 = nn.Linear(84, 10)
+
+        self.apply(he_init)
         
 
     def forward(self, x):
@@ -49,19 +48,18 @@ class TestModelLeNet5(nn.Module):
 
     def set_activate(self, activate, **kwargs):
         self.activate = activate
-
         self.reset_activation_func(**kwargs)
     
 
-    def apply_hook(self, func):
-        self.af1.register_full_backward_hook(func('af1'))
-        self.af2.register_full_backward_hook(func('af2'))
-        self.af3.register_full_backward_hook(func('af3'))
-        self.af4.register_full_backward_hook(func('af4'))
-
-
-    def apply_forward_hook(self, func):
+    def apply_wrapped_forward_hook(self, func):
         self.af1.register_forward_hook(func('af1'))
         self.af2.register_forward_hook(func('af2'))
         self.af3.register_forward_hook(func('af3'))
         self.af4.register_forward_hook(func('af4'))
+
+
+    def apply_forward_hook(self, func):
+        self.af1.register_forward_hook(func)
+        self.af2.register_forward_hook(func)
+        self.af3.register_forward_hook(func)
+        self.af4.register_forward_hook(func)

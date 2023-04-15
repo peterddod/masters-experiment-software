@@ -1,4 +1,4 @@
-from models import ExpResNet9, ExpLeNet5, ExpModelFC, SmallFC
+from models import ResNet9, LeNet5, SimpleMLP
 from torch import nn
 import torch.optim as optim
 
@@ -6,10 +6,9 @@ import torch.optim as optim
 ### PARAMATER MAPS
 
 model_map = {
-    'small_fc': SmallFC,
-    'exp_fc': ExpModelFC,
-    'exp_lenet': ExpLeNet5,
-    'exp_resnet': ExpResNet9,
+    'exp_fc': SimpleMLP,
+    'exp_lenet': LeNet5,
+    'exp_resnet': ResNet9,
 }
 
 optimiser_map = {

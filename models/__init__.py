@@ -1,12 +1,5 @@
-from .SmallFC import SmallFC
 from .FreezeNet import FreezeNet
-from .FreezeNet import Activator
 
-from .ExpModelFC import ExpModelFC
-from .ExpLeNet5 import ExpLeNet5
-from .ExpResNet9 import ExpResNet9
-
-from .TestModelFC import TestModelFC
-from .TestModelAFFC import TestModelAFFC
-from .TestModelLeNet5 import TestModelLeNet5
-from .TestModelResNet9 import TestModelResNet9
+from .SimpleMLP import SimpleMLP
+from .LeNet5 import LeNet5
+from .ResNet9 import ResNet9

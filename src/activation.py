@@ -65,7 +65,7 @@ def extract(model, dataloader, device):
         _model_out.append(output.flatten(1).detach())
         return
 
-    model.apply_activation_hook(hook)
+    model.apply_forward_hook(hook)
 
     for data, target in dataloader:
         data = data.to(device)

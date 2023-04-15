@@ -1,20 +1,3 @@
-# in: Model class, freeze_step, step
-
-# SCRIPT
-
-# get dataset
-
-# start training
-
-    # for each step 
-
-        # run training
-
-        # log 
-
-        # if freeze step
-
-            # replace model with freeze model, continue training 
 
 """
 Script for testing freezing structure.
@@ -31,7 +14,8 @@ import warnings
 import json
 from config import *
 
-from models import TestModelFC, TestModelLeNet5, TestModelAFFC, ExpModelFC, FreezeNet, Activator
+from models import TestModelFC, TestModelLeNet5, TestModelAFFC, ExpModelFC, FreezeNet
+from models.modules import Activator
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
