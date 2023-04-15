@@ -64,19 +64,19 @@ def extract(model, dataloader, device):
     return _output
 
 
-def cache_pattern_matrix(filename, input_name, data, model_cls, device):
+def cache_pattern_matrix(filename, data, model_cls, snapshots_path, cache_path, device):
     """
     Produces activation patterns matrix from a saved model when using a dataset and saves
     a .pt to the specifed path.
     """
     if filename==None:  return
-    model_path = f'./results/{input_name}/snapshots/{filename}.pt'
-    cache_path = f'./processed/{input_name}/.cache/{filename}.pt'
+    model_path = f'{snapshots_path}{filename}.pt'
+    cached_pattern_path = f'{cache_path}{filename}.pt'
     model = model_cls()
     model.to(device)
     model.load_state_dict(torch.load(model_path, map_location=torch.device(device)))
     activation_matrix = extract(model, data, device)
-    torch.save(activation_matrix, cache_path)
+    torch.save(activation_matrix, cached_pattern_path)
 
 
 def get_number_of_unique_patterns(activation_matrix):
@@ -103,10 +103,10 @@ def get_similarities(m1, m2, compareFunction=cos_sim):
     return output
 
 
-def load_cached_pattern(inputname, filename):
+def load_cached_pattern(filename, cache_path):
     output = None
     try:
-        output = torch.load(f'./processed/{inputname}/.cache/{filename}.pt', map_location=torch.device('cpu')).detach()
+        output = torch.load(f'{cache_path}{filename}.pt', map_location=torch.device('cpu')).detach()
     except Exception as e:
         print(e)
         pass
@@ -114,11 +114,11 @@ def load_cached_pattern(inputname, filename):
     return output
 
 
-def load_snapshot(inputname, filename, model_cls):
+def load_snapshot(filename, model_cls, snapshots_path):
     output = None
     try:
         model = model_cls()
-        model.load_state_dict(torch.load(f'./results/{inputname}/snapshots/{filename}.pt', map_location=torch.device('cpu')))
+        model.load_state_dict(torch.load(f'{snapshots_path}{filename}.pt', map_location=torch.device('cpu')))
         output = model
 
     except Exception as e:
@@ -128,7 +128,7 @@ def load_snapshot(inputname, filename, model_cls):
     return output
 
 
-def get_prev(current_filename, n, samplerate, updates_in_epoch, batch_size):
+def get_prev(current_filename, n, samplerate, updates_in_epoch):
     """
     Find the previous n filename if exists, otherwise return None.
     """
@@ -180,7 +180,7 @@ def get_mean_abs_weight_difference(model1, model2):
     return torch.cat(diff_list)
 
 
-def process_statistics(filename, output, test_dataloader, input_name, model_cls, at_10_filename, at_100_filename, measure_unique_patterns, device):
+def process_statistics(filename, output, test_dataloader, model_cls, at_10_filename, at_100_filename, measure_unique_patterns, snapshots_path, cache_path, device):
     """
     Processes the statistics for a particular update.
 
@@ -215,54 +215,54 @@ def process_statistics(filename, output, test_dataloader, input_name, model_cls,
     batch_idx = int(split[1])
 
     model = model_cls()
-    model.load_state_dict(torch.load(f'./results/{input_name}/snapshots/{filename}.pt', map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load(f'{snapshots_path}{filename}.pt', map_location=torch.device('cpu')))
     test_acc = evaluate_epoch(model, test_dataloader, device)
 
     output_measures.append(str(epoch))
     output_measures.append(str(batch_idx))
     output_measures.append(str(test_acc))
 
-    activation_matrix = torch.load(f'./processed/{input_name}/.cache/{filename}.pt').detach()
+    activation_matrix = torch.load(f'{cache_path}{filename}.pt').detach()
 
     if measure_unique_patterns: output_measures.append(str(get_number_of_unique_patterns(activation_matrix)))
 
-    at_10 = load_cached_pattern(input_name, at_10_filename)
+    at_10 = load_cached_pattern(at_10_filename, cache_path)
     sim_at_10 = get_similarities(at_10, activation_matrix)
     output_measures.append(np.mean(sim_at_10))
     output_measures.append(np.std(sim_at_10))
 
-    at_100 = load_cached_pattern(input_name, at_100_filename)
+    at_100 = load_cached_pattern(at_100_filename, cache_path)
     sim_at_100 = get_similarities(at_100, activation_matrix)
     output_measures.append(np.mean(sim_at_100))
     output_measures.append(np.std(sim_at_100))
 
-    at_init = load_cached_pattern(input_name, 'init')
+    at_init = load_cached_pattern('init', cache_path)
     sim_at_init = get_similarities(at_init, activation_matrix)
     output_measures.append(np.mean(sim_at_init))
     output_measures.append(np.std(sim_at_init))
 
-    at_final = load_cached_pattern(input_name, 'final')
+    at_final = load_cached_pattern('final', cache_path)
     sim_at_final = get_similarities(at_final, activation_matrix)
     output_measures.append(np.mean(sim_at_final))
     output_measures.append(np.std(sim_at_final))
 
 
-    at_10_model = load_snapshot(input_name, at_10_filename, model_cls)
+    at_10_model = load_snapshot(at_10_filename, model_cls, snapshots_path)
     wc_at_10 = get_mean_abs_weight_difference(model, at_10_model)
     output_measures.append(wc_at_10.mean().item())
     output_measures.append(wc_at_10.std().item())
 
-    at_100_model = load_snapshot(input_name, at_100_filename, model_cls)
+    at_100_model = load_snapshot(at_100_filename, model_cls, snapshots_path)
     wc_at_100 = get_mean_abs_weight_difference(model, at_100_model)
     output_measures.append(wc_at_100.mean().item())
     output_measures.append(wc_at_100.std().item())
 
-    at_init_model = load_snapshot(input_name, 'init', model_cls)
+    at_init_model = load_snapshot('init', model_cls, snapshots_path)
     wc_at_init = get_mean_abs_weight_difference(model, at_init_model)
     output_measures.append(wc_at_init.mean().item())
     output_measures.append(wc_at_init.std().item())
 
-    at_final_model = load_snapshot(input_name, 'final', model_cls)
+    at_final_model = load_snapshot('final', model_cls, snapshots_path)
     wc_at_final = get_mean_abs_weight_difference(model, at_final_model)
     output_measures.append(wc_at_final.mean().item())
     output_measures.append(wc_at_final.std().item())
@@ -270,5 +270,5 @@ def process_statistics(filename, output, test_dataloader, input_name, model_cls,
     output(",".join([str(x) for x in output_measures]))
 
 
-def delete_unused(old, new, input_name):
-    [os.remove(f'./processed/{input_name}/.cache/{filename}.pt') for filename in set(old) - set(new) if filename != None]
+def delete_unused(old, new, cache_path):
+    [os.remove(f'{cache_path}{filename}.pt') for filename in set(old) - set(new) if filename != None]

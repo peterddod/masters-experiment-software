@@ -49,13 +49,16 @@ if __name__ == '__main__':
 
     resetseed(args.seed)
 
-    model = model_map[args.model]()
+    model = MODELS[args.model]()
     model.to(args.device)
 
-    optimiser = optimiser_map[args.optimiser](model.parameters(), lr=args.theta)
+    optimiser = OPTIMISERS[args.optimiser](model.parameters(), lr=args.theta)
 
-    os.mkdir(f'./results/{args.filename}/')
-    os.mkdir(f'./results/{args.filename}/snapshots/')
+    results_path = f"{PATHS['results']['main']}{args.filename}/"
+    snapshot_path = f'{results_path}snapshots/'
+
+    os.mkdir(results_path)
+    os.mkdir(snapshot_path)
 
     file = FileWriter(f'./results/{args.filename}/log.csv', ",".join(['epoch','step','train_loss','test_accuracy']))
 
@@ -69,9 +72,9 @@ if __name__ == '__main__':
     }
 
     total = 0
-    loss = loss_map[args.loss]()
+    loss = LOSSES[args.loss]()
 
-    save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/init.pt')
+    save_state_dict(model.state_dict(), f'{snapshot_path}init.pt')
 
     updates_in_epoch = info_dictionary['dataset_size'] // args.batchsize
 
@@ -89,14 +92,14 @@ if __name__ == '__main__':
             )
 
             if take_snapshot:
-                save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/{epoch}_{batch_idx}.pt')
+                save_state_dict(model.state_dict(), f'{snapshot_path}{epoch}_{batch_idx}.pt')
 
-    save_state_dict(model.state_dict(), f'./results/{args.filename}/snapshots/final.pt')
+    save_state_dict(model.state_dict(), f'{snapshot_path}final.pt')
 
     t_end = time()
 
     info_dictionary['execution_time'] = t_end-t_start
 
-    with open(f'./results/{args.filename}/info.json', 'w') as f:
+    with open(f'{results_path}info.json', 'w') as f:
         json.dump(info_dictionary, f, indent = 4) 
         f.close()

@@ -49,6 +49,8 @@ parser.add_argument("-d", "--device", default='cpu', help="Device for training")
 if __name__ == '__main__':
     args = parser.parse_args()
 
+    results_path = f'{PATHS["results"]["test"]}{args.filename}/'
+
     t_start = time()
 
     resetseed(args.seed)
@@ -57,11 +59,11 @@ if __name__ == '__main__':
     m = TestModelLeNet5()
     # model.to(args.device)
 
-    optimiser = optimiser_map[args.optimiser](list(model.parameters()) + list(m.parameters()), lr=args.theta)
+    optimiser = OPTIMISERS[args.optimiser](list(model.parameters()) + list(m.parameters()), lr=args.theta)
 
-    os.mkdir(f'./test_results/{args.filename}/')
+    os.mkdir(results_path)
 
-    file = FileWriter(f'./test_results/{args.filename}/log.csv', ",".join(['epoch','step','train_loss','test_accuracy','train_accuracy']))
+    file = FileWriter(f'{results_path}log.csv', ",".join(['epoch','step','train_loss','test_accuracy','train_accuracy']))
 
     train_loader, test_loader = get_train_loaders(args.dataset, args.batchsize)
 
@@ -73,14 +75,14 @@ if __name__ == '__main__':
     }
 
     total = 0
-    loss = loss_map[args.loss]()
+    loss = LOSSES[args.loss]()
 
     for epoch in range(1, args.epochs+1):
         if epoch == args.freezepoint:
             m.load_state_dict(model.state_dict())
             model = FreezeNet(model, m)
             model.model.set_activate(Activator, get_activation_matrix=model.get_activation_matrix)
-            optimiser = optimiser_map[args.optimiser](model.parameters(), lr=args.theta)
+            optimiser = OPTIMISERS[args.optimiser](model.parameters(), lr=args.theta)
 
         for batch_idx, (data, target) in enumerate(train_loader):
             run_step_w_acc(
@@ -96,6 +98,6 @@ if __name__ == '__main__':
 
     info_dictionary['execution_time'] = t_end-t_start
 
-    with open(f'./test_results/{args.filename}/info.json', 'w') as f:
+    with open(f'{results_path}info.json', 'w') as f:
         json.dump(info_dictionary, f, indent = 4) 
         f.close()

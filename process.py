@@ -28,15 +28,20 @@ parser.add_argument("-n", default=None, help="Number of samples to use for activ
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    # read experiment.info file to get activation layer sizes
-    with open(f'./results/{args.input}/info.json', 'r') as f:
+    filename = args.filename
+
+    results_path = f'{PATHS["results"]["processed"]}{filename}/'
+    cache_path = f'{results_path}.cache/'
+    import_path = f'{PATHS["results"]["main"]}{args.input}/'
+    snapshots_path = f'{import_path}snapshots/'
+
+    # import experiment info
+    with open(f'{import_path}info.json', 'r') as f:
         experiment_info = json.load(f)
         f.close()
 
-    filename = args.filename  # TODO: add folder creation for if /processed doesn't exist
-
-    os.mkdir(f'./processed/{filename}/')
-    os.mkdir(f'./processed/{filename}/.cache/')
+    os.mkdir(results_path)
+    os.mkdir(cache_path)
 
     measures = [
         'epoch',
@@ -56,10 +61,10 @@ if __name__ == '__main__':
     if not args.uniquepatterns: measures.remove('unique_ap')
     
     # create output file
-    output = FileWriter(f'./processed/{filename}/processed.csv', ",".join(measures))
+    output = FileWriter(f'{results_path}processed.csv', ",".join(measures))
     
     # 1. find range of updates required to process one set of stats 
-    model_cls = model_map[experiment_info['script_parameters']['model']]
+    model_cls = MODELS[experiment_info['script_parameters']['model']]
 
     # pattern_data = get_pattern_data(args.dataset)
     test_loader = get_train_loaders(args.dataset, seed=args.seed, n=args.n)[1]
@@ -70,8 +75,8 @@ if __name__ == '__main__':
     batch_idx = 0
 
     # cache patterns for absolute similarity checks
-    cache_pattern_matrix('init', args.input, test_loader, model_cls, args.device)  # pattern matrix at initialisation
-    cache_pattern_matrix('final', args.input, test_loader, model_cls, args.device)  # final pattern matrix
+    cache_pattern_matrix('init', test_loader, model_cls, args.device)  # pattern matrix at initialisation
+    cache_pattern_matrix('final', test_loader, model_cls, args.device)  # final pattern matrix
 
     updates_in_epoch = experiment_info['dataset_size'] // experiment_info['script_parameters']['batchsize']
     total_number_of_updates = updates_in_epoch * experiment_info['script_parameters']['epochs']
@@ -94,20 +99,23 @@ if __name__ == '__main__':
             args.input,
             test_loader,
             model_cls, 
-            args.device)
+            snapshots_path,
+            cache_path,
+            args.device
+        )
         
-        # map(func, storage_window_filenames)
         for x in storage_window_filenames: func(x)
 
         func = lambda filename: process_statistics(
             filename,
             output,
             test_loader,
-            args.input,
             model_cls,
-            get_prev(filename, comparisons[0], args.samplerate, updates_in_epoch, args.batchsize),
-            get_prev(filename, comparisons[1], args.samplerate, updates_in_epoch, args.batchsize),
+            get_prev(filename, comparisons[0], args.samplerate, updates_in_epoch),
+            get_prev(filename, comparisons[1], args.samplerate, updates_in_epoch),
             args.uniquepatterns,
+            snapshots_path,
+            cache_path,
             args.device
         )
         
@@ -127,6 +135,6 @@ if __name__ == '__main__':
         )  
 
         if (storage_window_filenames != None):
-            delete_unused(storage_window_filenames_old, storage_window_filenames, filename)  # delete files that exist in old that aren't in new
+            delete_unused(storage_window_filenames_old, storage_window_filenames, cache_path)  # delete files that exist in old that aren't in new
             processing_window_filenames = storage_window_filenames[args.batchsize:]
 
