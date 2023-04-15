@@ -6,7 +6,7 @@ Part of MSci Project for Peter Dodd @ University of Glasgow.
 import argparse
 import json
 from src.activation import cache_pattern_matrix, delete_unused, get_filenames_to_process, get_prev, process_statistics
-from utils import FileWriter, get_pattern_data, get_train_loaders
+from utils import FileWriter, get_train_loaders
 from config import *
 import os
 

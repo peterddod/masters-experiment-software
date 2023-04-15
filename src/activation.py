@@ -5,21 +5,6 @@ import os
 from collections import Counter
 
 
-def make_activation_matrix(byte_sequence, neuron_count):
-    """
-    Create a `torch.Tensor` matrix for the activation of each neuron in a
-    neural network per dataset sample.
-    """
-    bytes_per_pattern = int(np.ceil(neuron_count/8))
-
-    byte_array = [byte_sequence[i:i+bytes_per_pattern] for i in range(0,len(byte_sequence),bytes_per_pattern)]
-    bit_string_array = [ "".join(list((map(lambda y: '{0:08b}'.format(y), x))))[:neuron_count] for x in byte_array ]
-    int_array = [int(x) for x in list("".join(bit_string_array))]
-    activation_matrix = torch.Tensor(int_array).reshape(-1,neuron_count)
-
-    return activation_matrix
-
-
 def get_filenames_to_process(samplerate, comparisons, batch_size, batch_idx, updates_in_epoch, total_number_of_updates):
     """
     Find the file names required to process a batch_idx in file_process.py.
