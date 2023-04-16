@@ -80,6 +80,10 @@ def cache_pattern_matrix(filename, data, model_cls, snapshots_path, cache_path, 
 
 
 def get_number_of_unique_patterns(activation_matrix):
+    """
+    Counts the number of nuique patterns in an activation_matrix.
+    Works poorly for non-small networks (bigger than lenet5).
+    """
     convert_func = lambda i: hash(str(i.tolist()))
     activation_matrix_hash = map(convert_func, activation_matrix)
     counter = Counter(activation_matrix_hash)
@@ -88,10 +92,17 @@ def get_number_of_unique_patterns(activation_matrix):
 
 
 def cos_sim(a, b):
+    """
+    Returns the cosine similarity of two vectors.
+    """
     return torch.dot(a, b)/(torch.linalg.norm(a)*torch.linalg.norm(b))
 
 
 def get_similarities(m1, m2, compareFunction=cos_sim):
+    """
+    Take two matrices filled with a set of n vectors of length m and calculate
+    the similarities between corresponding vectors. Returns a list of n similarities.
+    """
     if m1==None or m2==None: return [0]
     if m1.shape != m2.shape: return [0]
 
@@ -104,6 +115,9 @@ def get_similarities(m1, m2, compareFunction=cos_sim):
 
 
 def load_cached_pattern(filename, cache_path):
+    """
+    Load a cached pattern from the cache path with a particular filename.
+    """
     output = None
     try:
         output = torch.load(f'{cache_path}{filename}.pt', map_location=torch.device('cpu')).detach()
@@ -115,6 +129,10 @@ def load_cached_pattern(filename, cache_path):
 
 
 def load_snapshot(filename, model_cls, snapshots_path):
+    """
+    Load snapshot of model `model_cls` from `snapshots_path` with filename `filename`.
+    `filename` should exclude .pt extension.
+    """
     output = None
     try:
         model = model_cls()
@@ -271,4 +289,7 @@ def process_statistics(filename, output, test_dataloader, model_cls, at_10_filen
 
 
 def delete_unused(old, new, cache_path):
+    """
+    Removes unused cached patterns from cache_path.
+    """
     [os.remove(f'{cache_path}{filename}.pt') for filename in set(old) - set(new) if filename != None]
