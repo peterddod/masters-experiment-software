@@ -8,7 +8,7 @@ import json
 
 import torch
 from src import MeasureCollector
-from src.activation import cache_pattern_matrix, delete_unused, get_filenames_to_process, get_prev, process, process_statistics
+from src.activation import cache_pattern_matrix, delete_unused, get_filenames_to_process, process
 from utils import get_train_loaders
 from config import *
 import os
@@ -101,6 +101,7 @@ if __name__ == '__main__':
         for x in storage_window_filenames: func(x)
 
         for filename in processing_window_filenames:
+            if filename==None: break
             activation_matrix = torch.load(f'{cache_path}{filename}.pt').detach()
 
             model = model_cls()

@@ -1,4 +1,4 @@
-from src.similarities import cos_sim
+from src.similarities import cos_sim, dice_sim, tanimoto_sim
 from models import ResNet9, LeNet5, SimpleMLP
 from torch import nn
 from torch import optim
@@ -50,8 +50,12 @@ USER_MEASURES = [
 
 SIM_FUNC_MAP = {
     'cos': cos_sim,
+    'tanimoto': tanimoto_sim,
+    'dice': dice_sim,
 }
 
 SIMIALRITIES = [
     'cos',
+    'tanimoto',
+    'dice',
 ]

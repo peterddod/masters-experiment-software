@@ -200,8 +200,8 @@ def get_unique_patterns(**kwargs):
 
 def get_weight_change(at, **kwargs):
     if at.isdigit():
-        comapre_at = int(at)/kwargs['samplerate']
-        at = get_prev(kwargs['filename'], comapre_at, kwargs['samplerate'], kwargs['updates_in_epoch'])
+        compare_at = int(at)/kwargs['samplerate']
+        at = get_prev(kwargs['filename'], compare_at, kwargs['samplerate'], kwargs['updates_in_epoch'])
     
     if at == None:
         return [0,0]
@@ -213,14 +213,17 @@ def get_weight_change(at, **kwargs):
 
 
 def get_similarity(at, similarity, **kwargs):
+    # print('--- sim')
+    # print(at)
     if at.isdigit():
-        comapre_at = int(at)/kwargs['samplerate']
-        at = get_prev(kwargs['filename'], comapre_at, kwargs['samplerate'], kwargs['updates_in_epoch'])
+        compare_at = int(at)/kwargs['samplerate']
+        # print(compare_at)
+        at = get_prev(kwargs['filename'], compare_at, kwargs['samplerate'], kwargs['updates_in_epoch'])
 
     if at == None:
         return [0,0]
 
-    at_pattern = load_cached_pattern('final', kwargs['cache_path'])
+    at_pattern = load_cached_pattern(at, kwargs['cache_path'])
     result = get_similarities(
         at_pattern, 
         kwargs['activation_matrix'], 
@@ -253,96 +256,6 @@ def process(measure, **kwargs):
     result = PROCESS_MAP[measure](*params, **kwargs)
 
     return result
-
-
-def process_statistics(filename, output, test_dataloader, model_cls, at_10_filename, at_100_filename, measure_unique_patterns, snapshots_path, cache_path, device):
-    """
-    Processes the statistics for a particular update.
-
-    Inputs a queue and adds a .csv string in the following order:
-    - epoch
-    - batch_idx
-    - test_acc
-    - unique_ap
-    - mean_ap_sim@10
-    - std_ap_sim@10
-    - mean_ap_sim@100
-    - std_ap_sim@100
-    - mean_ap_sim@init
-    - std_ap_sim@init
-    - mean_ap_sim@final
-    - std_ap_sim@final
-    - mean_wc@10
-    - std_wc@10
-    - mean_wc@100
-    - std_wc@100
-    - mean_wc@init
-    - std_wc@init
-    - mean_wc@final
-    - std_wc@final
-    """
-    if filename == None: return 
-
-    output_measures = []
-
-    split = filename.split('_')
-    epoch = int(split[0])
-    batch_idx = int(split[1])
-
-    model = model_cls()
-    model.load_state_dict(torch.load(f'{snapshots_path}{filename}.pt', map_location=torch.device('cpu')))
-    test_acc = evaluate_epoch(model, test_dataloader, device)
-
-    output_measures.append(str(epoch))
-    output_measures.append(str(batch_idx))
-    output_measures.append(str(test_acc))
-
-    activation_matrix = torch.load(f'{cache_path}{filename}.pt').detach()
-
-    if measure_unique_patterns: output_measures.append(str(get_number_of_unique_patterns(activation_matrix)))
-
-    at_10 = load_cached_pattern(at_10_filename, cache_path)
-    sim_at_10 = get_similarities(at_10, activation_matrix)
-    output_measures.append(np.mean(sim_at_10))
-    output_measures.append(np.std(sim_at_10))
-
-    at_100 = load_cached_pattern(at_100_filename, cache_path)
-    sim_at_100 = get_similarities(at_100, activation_matrix)
-    output_measures.append(np.mean(sim_at_100))
-    output_measures.append(np.std(sim_at_100))
-
-    at_init = load_cached_pattern('init', cache_path)
-    sim_at_init = get_similarities(at_init, activation_matrix)
-    output_measures.append(np.mean(sim_at_init))
-    output_measures.append(np.std(sim_at_init))
-
-    at_final = load_cached_pattern('final', cache_path)
-    sim_at_final = get_similarities(at_final, activation_matrix)
-    output_measures.append(np.mean(sim_at_final))
-    output_measures.append(np.std(sim_at_final))
-
-
-    at_10_model = load_snapshot(at_10_filename, model_cls, snapshots_path)
-    wc_at_10 = get_mean_abs_weight_difference(model, at_10_model)
-    output_measures.append(wc_at_10.mean().item())
-    output_measures.append(wc_at_10.std().item())
-
-    at_100_model = load_snapshot(at_100_filename, model_cls, snapshots_path)
-    wc_at_100 = get_mean_abs_weight_difference(model, at_100_model)
-    output_measures.append(wc_at_100.mean().item())
-    output_measures.append(wc_at_100.std().item())
-
-    at_init_model = load_snapshot('init', model_cls, snapshots_path)
-    wc_at_init = get_mean_abs_weight_difference(model, at_init_model)
-    output_measures.append(wc_at_init.mean().item())
-    output_measures.append(wc_at_init.std().item())
-
-    at_final_model = load_snapshot('final', model_cls, snapshots_path)
-    wc_at_final = get_mean_abs_weight_difference(model, at_final_model)
-    output_measures.append(wc_at_final.mean().item())
-    output_measures.append(wc_at_final.std().item())
-
-    output(",".join([str(x) for x in output_measures]))
 
 
 def delete_unused(old, new, cache_path):
