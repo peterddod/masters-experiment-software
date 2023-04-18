@@ -6,6 +6,7 @@ Part of MSci Project for Peter Dodd @ University of Glasgow.
 import os
 from time import time
 from datetime import datetime
+from models import FreezeNet
 from utils import *
 import argparse
 from src.train import *
@@ -49,8 +50,9 @@ if __name__ == '__main__':
 
     resetseed(args.seed)
 
-    model = MODELS[args.model]()
-    model.to(args.device)
+    model = FreezeNet(MODELS[args.model])
+    # model.to(args.device)
+    model.freeze()
 
     optimiser = OPTIMISERS[args.optimiser](model.parameters(), lr=args.theta)
 
@@ -60,7 +62,7 @@ if __name__ == '__main__':
     os.mkdir(results_path)
     os.mkdir(snapshot_path)
 
-    file = FileWriter(f'./results/{args.filename}/log.csv', ",".join(['epoch','step','train_loss','test_accuracy']))
+    file = FileWriter(f'{results_path}log.csv', ",".join(['epoch','step','train_loss','test_accuracy']))
 
     train_loader, test_loader = get_train_loaders(args.dataset, args.batchsize)
 

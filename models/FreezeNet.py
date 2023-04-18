@@ -27,6 +27,8 @@ class FreezeNet(nn.Module):
 
         self.model = None
 
+        self.frozen = False
+
         self.active_model = self.pattern_selector
 
 
@@ -52,12 +54,18 @@ class FreezeNet(nn.Module):
         self.pattern_selector.eval()
         self.model.set_activate(Activator, get_activation_matrix=self.get_activation_matrix)
         self.active_model = self.model
+        self.frozen = True
+
+
+    def state_dict(self):
+        return self.active_model.state_dict()
 
 
     def forward(self, x):
-        with torch.no_grad():
-            self.pattern_selector(x)
-        x = self.model(x)
+        if self.frozen:
+            with torch.no_grad():
+                self.pattern_selector(x)
+        x = self.active_model(x)
         return x
     
 

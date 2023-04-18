@@ -2,11 +2,11 @@ now:
 	python main.py
 	
 test:
-	rm -rf results/test
-	python main.py -f test -m exp_fc -l crossentropy
+	rm -rf results/main/test
+	python main.py -f test -m exp_fc -l crossentropy -e 1
 
 process:
-	rm -rf processed/test
+	rm -rf results/process/test
 	python process.py -i test -f test -s 10 -u
 
 fc_experiment:
@@ -48,7 +48,7 @@ lenet_exp_test:
 exp: exp_train exp_process
 
 test_len:
-	rm -rf test_results/test_lenet
+	rm -rf results/test/test_lenet
 	python test.py -f test_lenet -b 32 -t 0.0003 -o adam -e 1 -l crossentropy -s 1 -w 0.00001 -sr 10 -ds mnist -fp 1
 
 run_test_exp:

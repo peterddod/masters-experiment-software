@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     filename = args.filename
 
-    results_path = f'{PATHS["results"]["processed"]}{filename}/'
+    results_path = f'{PATHS["results"]["process"]}{filename}/'
     cache_path = f'{results_path}.cache/'
     import_path = f'{PATHS["results"]["main"]}{args.input}/'
     snapshots_path = f'{import_path}snapshots/'
@@ -69,14 +69,12 @@ if __name__ == '__main__':
     # pattern_data = get_pattern_data(args.dataset)
     test_loader = get_train_loaders(args.dataset, seed=args.seed, n=args.n)[1]
 
-    print(len(test_loader.dataset))
-
     comparisons = [1,10]  # how many update steps between comparisons
     batch_idx = 0
 
     # cache patterns for absolute similarity checks
-    cache_pattern_matrix('init', test_loader, model_cls, args.device)  # pattern matrix at initialisation
-    cache_pattern_matrix('final', test_loader, model_cls, args.device)  # final pattern matrix
+    cache_pattern_matrix('init', test_loader, model_cls, snapshots_path, cache_path, args.device)  # pattern matrix at initialisation
+    cache_pattern_matrix('final', test_loader, model_cls, snapshots_path, cache_path, args.device)  # final pattern matrix
 
     updates_in_epoch = experiment_info['dataset_size'] // experiment_info['script_parameters']['batchsize']
     total_number_of_updates = updates_in_epoch * experiment_info['script_parameters']['epochs']
@@ -96,7 +94,6 @@ if __name__ == '__main__':
     while storage_window_filenames != None:
         func = lambda filename: cache_pattern_matrix(
             filename,
-            args.input,
             test_loader,
             model_cls, 
             snapshots_path,

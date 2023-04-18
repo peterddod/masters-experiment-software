@@ -47,7 +47,8 @@ def extract(model, dataloader, device):
     _model_out = []
 
     def hook(model, input, output):
-        _model_out.append(output.flatten(1).detach())
+        output = output.flatten(1).detach()
+        _model_out.append(output)
         return
 
     model.apply_forward_hook(hook)
@@ -56,8 +57,9 @@ def extract(model, dataloader, device):
         data = data.to(device)
         model(data)
         _output.append(torch.hstack(_model_out).detach())
+        _model_out = []
 
-    _output = torch.hstack(_output).detach()
+    _output = torch.vstack(_output).detach()
 
     _output[_output!=0] = 1
 

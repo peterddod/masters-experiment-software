@@ -14,7 +14,7 @@ import warnings
 import json
 from config import *
 
-from models import TestModelFC, TestModelLeNet5, TestModelAFFC, ExpModelFC, FreezeNet
+from models import FreezeNet
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -34,7 +34,7 @@ parser.add_argument("-ds", "--dataset", default='mnist', help="Dataset to train 
 
 parser.add_argument("-e", "--epochs", default=2, help="Number of training epochs", type=int)
 parser.add_argument("-b", "--batchsize", default=64, help="Size of each training batch", type=int)
-parser.add_argument("-m", "--model", default='small_fc', help="The model to run training for")
+parser.add_argument("-m", "--model", default='exp_fc', help="The model to run training for")
 parser.add_argument("-o", "--optimiser", default='sgd', help="Optimiser for training")
 parser.add_argument("-l", "--loss", default='nll', help="Loss function for training")
 parser.add_argument("-t", "--theta", default=0.01, help="Learning rate", type=float)
@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     model = FreezeNet(MODELS[args.model])
 
-    optimiser = OPTIMISERS[args.optimiser](list(model.parameters()), lr=args.theta)
+    optimiser = OPTIMISERS[args.optimiser](model.parameters(), lr=args.theta)
 
     os.mkdir(results_path)
 
@@ -77,6 +77,7 @@ if __name__ == '__main__':
     for epoch in range(1, args.epochs+1):
         if epoch == args.freezepoint:
             model.freeze()
+            optimiser = OPTIMISERS[args.optimiser](model.parameters(), lr=args.theta)
 
         for batch_idx, (data, target) in enumerate(train_loader):
             run_step_w_acc(
