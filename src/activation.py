@@ -213,11 +213,8 @@ def get_weight_change(at, **kwargs):
 
 
 def get_similarity(at, similarity, **kwargs):
-    # print('--- sim')
-    # print(at)
     if at.isdigit():
         compare_at = int(at)/kwargs['samplerate']
-        # print(compare_at)
         at = get_prev(kwargs['filename'], compare_at, kwargs['samplerate'], kwargs['updates_in_epoch'])
 
     if at == None:
