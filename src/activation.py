@@ -51,7 +51,7 @@ def extract(model, dataloader, device):
         _model_out.append(output)
         return
 
-    model.apply_forward_hook(hook)
+    handles = model.apply_forward_hook(hook)
 
     for data, target in dataloader:
         data = data.to(device)
@@ -62,6 +62,8 @@ def extract(model, dataloader, device):
     _output = torch.vstack(_output).detach()
 
     _output[_output!=0] = 1
+
+    for handle in handles: handle.remove()
 
     return _output
 
