@@ -6,6 +6,7 @@ Part of MSci Project for Peter Dodd @ University of Glasgow.
 import os
 from time import time
 from datetime import datetime
+from src.activation import extract, get_similarities
 from models import FreezeNet
 from utils import *
 import argparse
@@ -50,9 +51,8 @@ if __name__ == '__main__':
 
     resetseed(args.seed)
 
-    model = FreezeNet(MODELS[args.model])
-    # model.to(args.device)
-    model.freeze()
+    model = MODELS[args.model]()
+    model.to(args.device)
 
     optimiser = OPTIMISERS[args.optimiser](model.parameters(), lr=args.theta)
 

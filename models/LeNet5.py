@@ -49,17 +49,12 @@ class LeNet5(nn.Module):
     def set_activate(self, activate, **kwargs):
         self.activate = activate
         self.reset_activation_func(**kwargs)
-    
-
-    def apply_wrapped_forward_hook(self, func):
-        self.af1.register_forward_hook(func('af1'))
-        self.af2.register_forward_hook(func('af2'))
-        self.af3.register_forward_hook(func('af3'))
-        self.af4.register_forward_hook(func('af4'))
 
 
     def apply_forward_hook(self, func):
-        self.af1.register_forward_hook(func)
-        self.af2.register_forward_hook(func)
-        self.af3.register_forward_hook(func)
-        self.af4.register_forward_hook(func)
+        handles = []
+        handles.append(self.af1.register_forward_hook(func))
+        handles.append(self.af2.register_forward_hook(func))
+        handles.append(self.af3.register_forward_hook(func))
+        handles.append(self.af4.register_forward_hook(func))
+        return handles

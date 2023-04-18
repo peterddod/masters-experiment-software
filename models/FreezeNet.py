@@ -57,6 +57,10 @@ class FreezeNet(nn.Module):
         self.frozen = True
 
 
+    def apply_forward_hook(self, hook):
+        return self.active_model.apply_forward_hook(hook)
+
+
     def state_dict(self):
         return self.active_model.state_dict()
 

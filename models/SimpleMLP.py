@@ -43,6 +43,8 @@ class SimpleMLP(nn.Module):
     
 
     def apply_forward_hook(self, func):
-        self.af1.register_forward_hook(func)
-        self.af2.register_forward_hook(func)
-        self.af3.register_forward_hook(func)
+        handles = []
+        handles.append(self.af1.register_forward_hook(func))
+        handles.append(self.af2.register_forward_hook(func))
+        handles.append(self.af3.register_forward_hook(func))
+        return handles
