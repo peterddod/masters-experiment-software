@@ -6,8 +6,6 @@ Part of MSci Project for Peter Dodd @ University of Glasgow.
 import os
 from time import time
 from datetime import datetime
-from src.activation import extract, get_similarities
-from models import FreezeNet
 from utils import *
 import argparse
 from src.train import *

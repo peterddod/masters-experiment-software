@@ -5,8 +5,11 @@ Part of MSci Project for Peter Dodd @ University of Glasgow.
 """
 import argparse
 import json
-from src.activation import cache_pattern_matrix, delete_unused, get_filenames_to_process, get_prev, process_statistics
-from utils import FileWriter, get_train_loaders
+
+import torch
+from src import MeasureCollector
+from src.activation import cache_pattern_matrix, delete_unused, get_filenames_to_process, get_prev, process, process_statistics
+from utils import get_train_loaders
 from config import *
 import os
 
@@ -43,25 +46,19 @@ if __name__ == '__main__':
     os.mkdir(results_path)
     os.mkdir(cache_path)
 
-    measures = [
+    base_measures = [
         'epoch',
         'batch_idx',
         'test_acc',
-        'unique_ap',
-        'mean_ap_sim@10','std_ap_sim@10',
-        'mean_ap_sim@100','std_ap_sim@100',
-        'mean_ap_sim@init','std_ap_sim@init',
-        'mean_ap_sim@final','std_ap_sim@final',
-        'mean_wc@10','std_wc@10',
-        'mean_wc@100','std_wc@100',
-        'mean_wc@init','std_wc@init',
-        'mean_wc@final','std_wc@final'
-        ]
-    
-    if not args.uniquepatterns: measures.remove('unique_ap')
-    
-    # create output file
-    output = FileWriter(f'{results_path}processed.csv', ",".join(measures))
+    ]
+
+    measures = [*base_measures, *USER_MEASURES]
+
+    measure_collector = MeasureCollector(
+        measures,
+        SIMIALRITIES,
+        f'{results_path}processed.csv',
+    )
     
     # 1. find range of updates required to process one set of stats 
     model_cls = MODELS[experiment_info['script_parameters']['model']]
@@ -103,20 +100,48 @@ if __name__ == '__main__':
         
         for x in storage_window_filenames: func(x)
 
-        func = lambda filename: process_statistics(
-            filename,
-            output,
-            test_loader,
-            model_cls,
-            get_prev(filename, comparisons[0], args.samplerate, updates_in_epoch),
-            get_prev(filename, comparisons[1], args.samplerate, updates_in_epoch),
-            args.uniquepatterns,
-            snapshots_path,
-            cache_path,
-            args.device
-        )
+        for filename in processing_window_filenames:
+            activation_matrix = torch.load(f'{cache_path}{filename}.pt').detach()
+
+            model = model_cls()
+            model.load_state_dict(torch.load(f'{snapshots_path}{filename}.pt', map_location=torch.device('cpu')))
+
+            current_measure = measure_collector.next()
+
+            while current_measure != None:                
+                result = process(
+                    current_measure,
+                    filename = filename,
+                    test_loader = test_loader,
+                    model_cls = model_cls,
+                    snapshots_path = snapshots_path,
+                    cache_path = cache_path,
+                    samplerate = args.samplerate,
+                    updates_in_epoch = updates_in_epoch,
+                    device = args.device,
+                    activation_matrix = activation_matrix,
+                    model = model,
+                )
+
+                measure_collector.add(result)
+                current_measure = measure_collector.next()
+            
+            measure_collector.write()
+
+        # func = lambda filename: process_statistics(
+        #     filename,
+        #     output,
+        #     test_loader,
+        #     model_cls,
+        #     get_prev(filename, comparisons[0], args.samplerate, updates_in_epoch),
+        #     get_prev(filename, comparisons[1], args.samplerate, updates_in_epoch),
+        #     args.uniquepatterns,
+        #     snapshots_path,
+        #     cache_path,
+        #     args.device
+        # )
         
-        [func(x) for x in processing_window_filenames]
+        # [func(x) for x in processing_window_filenames]
 
         batch_idx += 1
 

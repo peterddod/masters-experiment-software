@@ -1,3 +1,4 @@
+from src.similarities import cos_sim
 from models import ResNet9, LeNet5, SimpleMLP
 from torch import nn
 from torch import optim
@@ -34,3 +35,23 @@ PATHS = {
 }
 
 
+### MEASURES - for processing script
+
+USER_MEASURES = [
+    'sim@10',
+    'sim@100',
+    'sim@init',
+    'sim@final',
+    'wc@10',
+    'wc@100',
+    'wc@init',
+    'wc@final',
+]
+
+SIM_FUNC_MAP = {
+    'cos': cos_sim,
+}
+
+SIMIALRITIES = [
+    'cos',
+]

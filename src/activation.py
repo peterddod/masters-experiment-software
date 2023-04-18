@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+from config import SIM_FUNC_MAP
+from src.similarities import get_similarities
 from src.train import evaluate_epoch
 import os
 from collections import Counter
@@ -95,29 +97,6 @@ def get_number_of_unique_patterns(activation_matrix):
     return len(counter.keys())  
 
 
-def cos_sim(a, b):
-    """
-    Returns the cosine similarity of two vectors.
-    """
-    return torch.dot(a, b)/(torch.linalg.norm(a)*torch.linalg.norm(b))
-
-
-def get_similarities(m1, m2, compareFunction=cos_sim):
-    """
-    Take two matrices filled with a set of n vectors of length m and calculate
-    the similarities between corresponding vectors. Returns a list of n similarities.
-    """
-    if m1==None or m2==None: return [0]
-    if m1.shape != m2.shape: return [0]
-
-    output = []
-
-    for i in range(m1.shape[0]):
-        output.append(compareFunction(m1[i], m2[i]))
-
-    return output
-
-
 def load_cached_pattern(filename, cache_path):
     """
     Load a cached pattern from the cache path with a particular filename.
@@ -169,7 +148,7 @@ def get_prev(current_filename, n, samplerate, updates_in_epoch):
     epoch = (next_update) // updates_in_epoch + 1
     update = (next_update) % updates_in_epoch
 
-    return f'{epoch}_{update}'
+    return f'{int(epoch)}_{int(update)}'
 
 
 def get_mean_abs_weight_difference(model1, model2):
@@ -200,6 +179,80 @@ def get_mean_abs_weight_difference(model1, model2):
             pass
 
     return torch.cat(diff_list)
+
+
+def get_epoch(**kwargs):
+    return int(kwargs['filename'].split('_')[0])
+
+
+def get_batch_idx(**kwargs):
+    return int(kwargs['filename'].split('_')[1])
+
+
+def get_test_acc(**kwargs):
+    test_acc = evaluate_epoch(kwargs['model'], kwargs["test_loader"], kwargs["device"])
+    return test_acc
+
+
+def get_unique_patterns(**kwargs):
+    return get_number_of_unique_patterns(kwargs['activation_matrix'])
+
+
+def get_weight_change(at, **kwargs):
+    if at.isdigit():
+        comapre_at = int(at)/kwargs['samplerate']
+        at = get_prev(kwargs['filename'], comapre_at, kwargs['samplerate'], kwargs['updates_in_epoch'])
+    
+    if at == None:
+        return [0,0]
+
+    at_model = load_snapshot(at, kwargs['model_cls'], kwargs['snapshots_path'])
+    result = get_mean_abs_weight_difference(kwargs['model'], at_model)
+
+    return result
+
+
+def get_similarity(at, similarity, **kwargs):
+    if at.isdigit():
+        comapre_at = int(at)/kwargs['samplerate']
+        at = get_prev(kwargs['filename'], comapre_at, kwargs['samplerate'], kwargs['updates_in_epoch'])
+
+    if at == None:
+        return [0,0]
+
+    at_pattern = load_cached_pattern('final', kwargs['cache_path'])
+    result = get_similarities(
+        at_pattern, 
+        kwargs['activation_matrix'], 
+        compareFunction = SIM_FUNC_MAP[similarity],
+    )
+
+    return result
+
+
+def process(measure, **kwargs):
+    """
+    Take a given measure and return the desired value
+    """
+    PROCESS_MAP = {
+        'epoch': get_epoch,
+        'batch_idx': get_batch_idx,
+        'test_acc': get_test_acc,
+        'unique_patterns': get_unique_patterns,
+        'wc': get_weight_change,
+        'sim': get_similarity,
+    }
+
+    if '@' in measure:
+        measure_split = measure.split('@')
+        measure = measure_split[0]
+        params = measure_split[1].split('_')
+    else:
+        params = []
+
+    result = PROCESS_MAP[measure](*params, **kwargs)
+
+    return result
 
 
 def process_statistics(filename, output, test_dataloader, model_cls, at_10_filename, at_100_filename, measure_unique_patterns, snapshots_path, cache_path, device):
