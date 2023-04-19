@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
     resetseed(args.seed)
 
-    model = FreezeNet(MODELS[args.model])
+    model = FreezeNet(MODELS[args.model], seed=args.seed)
 
     optimiser = OPTIMISERS[args.optimiser](model.parameters(), lr=args.theta)
 

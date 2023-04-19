@@ -2,17 +2,20 @@ from models.modules import Activator
 from torch import nn
 import torch
 
+from utils import resetseed
+
 
 class FreezeNet(nn.Module):
     """
     Takes structure from pattern selector. Only trains model.
     Model should be identical to pattern selector but without an activation function.
     """
-    def __init__(self, model_cls):
+    def __init__(self, model_cls, seed=0):
         super(FreezeNet, self).__init__()
 
         self.model_cls = model_cls
 
+        resetseed(seed)
         self.pattern_selector = model_cls()
 
         self.activation_matrix_queue = []

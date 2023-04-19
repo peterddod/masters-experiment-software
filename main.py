@@ -70,7 +70,7 @@ if __name__ == '__main__':
             **dict(args._get_kwargs()),
         },
         'dataset_size': len(train_loader.dataset),
-        'layer_indexes': get_layer_start_indexes(model,train_loader,args.device)
+        'layer_indexes': get_layer_start_indexes(model,train_loader,args.device),
     }
 
     total = 0
