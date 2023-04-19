@@ -39,12 +39,12 @@ PATHS = {
 
 USER_MEASURES = [
     'sim@10',
-    # 'sim@100',
-    # 'sim@init',
+    'sim@100',
+    'sim@init',
     'sim@final',
     'sim_pl@10',
-    # 'sim_pl@100',
-    # 'sim_pl@init',
+    'sim_pl@100',
+    'sim_pl@init',
     'sim_pl@final',
     'wc@10',
     'wc@100',
@@ -59,7 +59,7 @@ SIM_FUNC_MAP = {
 }
 
 SIMIALRITIES = [
-    # 'cos',
-    # 'tanimoto',
+    'cos',
+    'tanimoto',
     'dice',
 ]
