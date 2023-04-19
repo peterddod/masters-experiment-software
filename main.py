@@ -6,6 +6,7 @@ Part of MSci Project for Peter Dodd @ University of Glasgow.
 import os
 from time import time
 from datetime import datetime
+from src.analysis import get_layer_start_indexes
 from utils import *
 import argparse
 from src.train import *
@@ -68,7 +69,8 @@ if __name__ == '__main__':
         'script_parameters': {
             **dict(args._get_kwargs()),
         },
-        'dataset_size': len(train_loader.dataset)
+        'dataset_size': len(train_loader.dataset),
+        'layer_indexes': get_layer_start_indexes(model,train_loader,args.device)
     }
 
     total = 0
