@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from config import SIM_FUNC_MAP
 from src.similarities import get_similarities
@@ -141,9 +140,9 @@ def get_prev(current_filename, n, samplerate, updates_in_epoch):
 
     current_update = (((epoch-1) * updates_in_epoch) + batch_idx)
     next_update = current_update - n*samplerate
+
     if next_update < 0:
         return None
-
 
     epoch = (next_update) // updates_in_epoch + 1
     update = (next_update) % updates_in_epoch
@@ -230,6 +229,40 @@ def get_similarity(at, similarity, **kwargs):
     return result
 
 
+def get_similarity_per_layer(at, similarity, **kwargs):
+    if at.isdigit():
+        compare_at = int(at)/kwargs['samplerate']
+        at = get_prev(kwargs['filename'], compare_at, kwargs['samplerate'], kwargs['updates_in_epoch'])
+
+    if at == None:
+        return [0,0]
+    
+    at_pattern = load_cached_pattern(at, kwargs['cache_path'])
+    
+    result_dict = {}
+
+    for layer_index, layer_start_index in enumerate(kwargs['layer_indexes']):
+        layer_start_index = int(layer_start_index)
+
+        if layer_index+1 >= len(kwargs['layer_indexes']):
+            layer_end_index = kwargs['activation_matrix'].shape[1]
+        else:
+            layer_end_index = kwargs['layer_indexes'][layer_index+1]
+
+        layer_at_pattern = at_pattern[:,layer_start_index:layer_end_index]
+        current_pattern = kwargs['activation_matrix'][:,layer_start_index:layer_end_index]
+
+        result = get_similarities(
+            layer_at_pattern, 
+            current_pattern, 
+            compareFunction = SIM_FUNC_MAP[similarity],
+        )
+
+        result_dict[layer_index] = result
+
+    return result_dict
+
+
 def process(measure, **kwargs):
     """
     Take a given measure and return the desired value
@@ -241,6 +274,7 @@ def process(measure, **kwargs):
         'unique_patterns': get_unique_patterns,
         'wc': get_weight_change,
         'sim': get_similarity,
+        'sim_pl': get_similarity_per_layer,
     }
 
     if '@' in measure:

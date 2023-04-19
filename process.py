@@ -1,5 +1,5 @@
 """
-Script to process raw byte data produced by main.py.
+Script to process snapshots produced by main.py.
 
 Part of MSci Project for Peter Dodd @ University of Glasgow.
 """
@@ -20,6 +20,7 @@ parser.add_argument("-i", "--input", default='test', help="Name of input folder 
 parser.add_argument("-f", "--filename", default=None, help="Name of output file")  # TODO: get default value from experiment.info
 parser.add_argument("-ds", "--dataset", default='mnist', help="Dataset to train with")
 parser.add_argument("-b", "--batchsize", default=10, help="Number of patterns to cache and process", type=int)
+parser.add_argument("-B", "--samplebatchsize", default=10000, help="The number of samples to process at once when calculating simialrities", type=int)  # this is currently not implemented TODO: implement batches for processing (requires big refactor)
 
 parser.add_argument("-u", "--uniquepatterns", action='store_false', help="Controls whether or not to record number of unique patterns measure (turn this off in large networks)")
 parser.add_argument("-s", "--samplerate", default=10, help="Gap between gradient updates for comparisons", type=int)
@@ -57,9 +58,10 @@ if __name__ == '__main__':
     measure_collector = MeasureCollector(
         measures,
         SIMIALRITIES,
+        len(experiment_info['layer_indexes']),
         f'{results_path}processed.csv',
     )
-    
+
     # 1. find range of updates required to process one set of stats 
     model_cls = MODELS[experiment_info['script_parameters']['model']]
 
@@ -122,27 +124,14 @@ if __name__ == '__main__':
                     device = args.device,
                     activation_matrix = activation_matrix,
                     model = model,
+                    samplesbatches = args.samplebatchsize,
+                    layer_indexes = experiment_info['layer_indexes'],
                 )
 
                 measure_collector.add(result)
                 current_measure = measure_collector.next()
             
             measure_collector.write()
-
-        # func = lambda filename: process_statistics(
-        #     filename,
-        #     output,
-        #     test_loader,
-        #     model_cls,
-        #     get_prev(filename, comparisons[0], args.samplerate, updates_in_epoch),
-        #     get_prev(filename, comparisons[1], args.samplerate, updates_in_epoch),
-        #     args.uniquepatterns,
-        #     snapshots_path,
-        #     cache_path,
-        #     args.device
-        # )
-        
-        # [func(x) for x in processing_window_filenames]
 
         batch_idx += 1
 
