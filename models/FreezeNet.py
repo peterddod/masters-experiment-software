@@ -22,9 +22,9 @@ class FreezeNet(nn.Module):
         self.activate = nn.ReLU()
 
         def record_activation_pattern(model, input, output):
-            output = output.detach()
-            output[output!=0] = 1
-            self.activation_matrix_queue.append(output)
+            output2 = output.detach()
+            output2[output2!=0] = 1
+            self.activation_matrix_queue.append(output2)
 
         self.pattern_selector.apply_forward_hook(record_activation_pattern)
 

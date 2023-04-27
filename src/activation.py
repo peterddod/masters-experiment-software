@@ -234,8 +234,11 @@ def get_similarity_per_layer(at, similarity, **kwargs):
         compare_at = int(at)/kwargs['samplerate']
         at = get_prev(kwargs['filename'], compare_at, kwargs['samplerate'], kwargs['updates_in_epoch'])
 
+    return_zeros = False
+
     if at == None:
-        return [0,0]
+        return_zeros = True
+        at = 'init'
     
     at_pattern = load_cached_pattern(at, kwargs['cache_path'])
     
@@ -259,6 +262,10 @@ def get_similarity_per_layer(at, similarity, **kwargs):
         )
 
         result_dict[layer_index] = result
+
+    if return_zeros:
+        for key, value in result_dict.items():
+            result_dict[key] = [0,0]
 
     return result_dict
 

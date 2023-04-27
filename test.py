@@ -47,6 +47,7 @@ parser.add_argument("-d", "--device", default='cpu', help="Device for training")
 
 if __name__ == '__main__':
     args = parser.parse_args()
+    torch.autograd.set_detect_anomaly(True)
 
     results_path = f'{PATHS["results"]["test"]}{args.filename}/'
 
