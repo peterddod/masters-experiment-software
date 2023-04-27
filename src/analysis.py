@@ -13,7 +13,7 @@ def get_layer_start_indexes(model, dataloader, device):
     def hook(model, input, output):
         output = output.flatten(1).detach()
         layer_sizes.append(output.shape[1])
-        layer_indexes.append(np.sum(layer_sizes))
+        layer_indexes.append(int(np.sum(layer_sizes)))
         return
 
     handles = model.apply_forward_hook(hook)

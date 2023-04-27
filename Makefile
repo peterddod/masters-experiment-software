@@ -12,13 +12,13 @@ process:
 
 
 fc_experiment:
-	python main.py -f exp_fc -b 32 -t 0.0003 -o adam -m exp_fc -e 3 -l crossentropy -s 1 -w 0.000001 -sr 10 -ds mnist -d='cuda:1'
+	python main.py -f exp_fc -b 32 -t 0.0003 -o adam -m exp_fc -e 3 -l crossentropy -s 1 -w 0.000001 -sr 10 -ds mnist
 
 lenet_experiment:
-	python main.py -f exp_lenet -b 32 -t 0.0003 -o adam -m exp_lenet -e 5 -l crossentropy -s 1 -w 0.000001 -sr 10 -ds mnist -d='cuda:1'
+	python main.py -f exp_lenet -b 32 -t 0.0003 -o adam -m exp_lenet -e 5 -l crossentropy -s 1 -w 0.000001 -sr 10 -ds mnist 
 
 resnet_experiment:
-	python main.py -f exp_resnet -b 256 -t 0.0001 -o adam -m exp_resnet -e 50 -l crossentropy -s 1 -w 0.00001 -sr 10 -ds cifar10 -d='cuda:1'
+	python main.py -f exp_resnet -b 256 -t 0.0001 -o adam -m exp_resnet -e 50 -l crossentropy -s 1 -w 0.00001 -sr 10 -ds cifar10 
 
 
 
@@ -33,9 +33,9 @@ resnet_process:
 
 
  
-exp_train: fc_experiment lenet_experiment resnet_experiment
+exp_train: fc_experiment lenet_experiment #resnet_experiment
 
-exp_process: fc_process lenet_process resnet_process
+exp_process: fc_process lenet_process #resnet_process
 
 exp: exp_train exp_process
 
