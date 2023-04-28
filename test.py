@@ -27,7 +27,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--filename", default=f'{datetime.now().strftime("%d.%m.%Y %H.%M.%S")}', help="Name of output folder")
 parser.add_argument("-s", "--seed", default=1, help="Seed to run experiment on", type=int)
 parser.add_argument("-sr", "--samplerate", default=10, help="Seed to run experiment on", type=int)
-parser.add_argument("-ds", "--dataset", default='mnist', help="Dataset to train with")
 
 
 ### TRAINING PARAMETERS
@@ -41,6 +40,7 @@ parser.add_argument("-t", "--theta", default=0.01, help="Learning rate", type=fl
 parser.add_argument("-w", "--weight_decay", default=0, help="Weight decay", type=float)
 parser.add_argument("-fp", "--freezepoint", default=2, help="Epoch at which to freeze structure", type=int)
 parser.add_argument("-d", "--device", default='cpu', help="Device for training")
+parser.add_argument("-ds", "--dataset", default='mnist', help="Dataset to train with")
 
 
 ### SCRIPT
@@ -49,21 +49,23 @@ if __name__ == '__main__':
     args = parser.parse_args()
     torch.autograd.set_detect_anomaly(True)
 
-    results_path = f'{PATHS["results"]["test"]}{args.filename}/'
-
     t_start = time()
 
     resetseed(args.seed)
 
-    model = FreezeNet(MODELS[args.model], seed=args.seed)
+    model = MODELS[args.model]()
+    model.to(args.device)
 
     optimiser = OPTIMISERS[args.optimiser](model.parameters(), lr=args.theta)
+
+    results_path = f'{PATHS["results"]["test"]}{args.filename}/'
 
     os.mkdir(results_path)
 
     file = FileWriter(f'{results_path}log.csv', ",".join(['epoch','step','train_loss','test_accuracy','train_accuracy']))
 
-    train_loader, test_loader = get_train_loaders(args.dataset, args.batchsize)
+    resetseed(args.seed)
+    train_loader, test_loader = get_train_loaders(args.dataset, args.batchsize, seed=args.seed)
 
     info_dictionary = {
         'script_parameters': {
@@ -73,12 +75,20 @@ if __name__ == '__main__':
     }
 
     total = 0
+    resetseed(args.seed)
     loss = LOSSES[args.loss]()
 
     for epoch in range(1, args.epochs+1):
         if epoch == args.freezepoint:
-            model.freeze()
-            optimiser = OPTIMISERS[args.optimiser](model.parameters(), lr=args.theta)
+            model_f = FreezeNet(MODELS[args.model], pattern_selector=model.state_dict(), seed=args.seed)
+            model_f.freeze()
+            optimiser = OPTIMISERS[args.optimiser](model_f.parameters(), 
+                                                   lr=optimiser.param_groups[0]['lr'],
+                                                   betas=optimiser.param_groups[0]['betas'],
+                                                   eps=optimiser.param_groups[0]['eps'],
+                                                   )
+            model_f.to(args.device)
+            model = model_f
 
         for batch_idx, (data, target) in enumerate(train_loader):
             run_step_w_acc(

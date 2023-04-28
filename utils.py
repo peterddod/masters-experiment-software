@@ -137,6 +137,7 @@ class Cutout(object):
 
 def get_train_loaders(dataset, batchsize=64, seed=None, n=None):
     if dataset == 'mnist':
+        torch.manual_seed(seed)
         train_loader = torch.utils.data.DataLoader(
             datasets.MNIST('./dataset', train=True, download=True, 
                 transform=transforms.Compose([
@@ -145,6 +146,7 @@ def get_train_loaders(dataset, batchsize=64, seed=None, n=None):
                 ])),
             batch_size=batchsize, 
             shuffle=True,
+
         )
 
         test_loader = torch.utils.data.DataLoader(
@@ -165,7 +167,7 @@ def get_train_loaders(dataset, batchsize=64, seed=None, n=None):
             indices = random.sample(range(0, 50000), n)
         else:
             indices = range(0, 50000)
-
+        torch.manual_seed(seed)
         train_loader = torch.utils.data.DataLoader(
             Subset(datasets.CIFAR10('./dataset', train=True, download=True,
                 transform=transforms.Compose([

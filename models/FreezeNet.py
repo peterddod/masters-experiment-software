@@ -10,21 +10,22 @@ class FreezeNet(nn.Module):
     Takes structure from pattern selector. Only trains model.
     Model should be identical to pattern selector but without an activation function.
     """
-    def __init__(self, model_cls, seed=0):
+    def __init__(self, model_cls, pattern_selector=None, seed=0):
         super(FreezeNet, self).__init__()
 
         self.model_cls = model_cls
 
         resetseed(seed)
-        self.pattern_selector = model_cls()
+        self.pattern_selector = self.model_cls()
+        self.pattern_selector.load_state_dict(pattern_selector)
 
         self.activation_matrix_queue = []
         self.activate = nn.ReLU()
 
         def record_activation_pattern(model, input, output):
-            output2 = output.detach()
-            output2[output2!=0] = 1
-            self.activation_matrix_queue.append(output2)
+            output = output.detach()
+            output[output!=0] = 1
+            self.activation_matrix_queue.append(output)
 
         self.pattern_selector.apply_forward_hook(record_activation_pattern)
 
@@ -74,6 +75,9 @@ class FreezeNet(nn.Module):
                 self.pattern_selector(x)
         x = self.active_model(x)
         return x
+    
+    def to(self, device):
+        return self.active_model.to(device)
     
 
     def __call__(self, x):

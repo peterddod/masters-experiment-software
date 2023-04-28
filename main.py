@@ -63,7 +63,8 @@ if __name__ == '__main__':
 
     file = FileWriter(f'{results_path}log.csv', ",".join(['epoch','step','train_loss','test_accuracy']))
 
-    train_loader, test_loader = get_train_loaders(args.dataset, args.batchsize)
+    resetseed(args.seed)
+    train_loader, test_loader = get_train_loaders(args.dataset, args.batchsize, seed=args.seed)
 
     info_dictionary = {
         'script_parameters': {
@@ -74,6 +75,7 @@ if __name__ == '__main__':
     }
 
     total = 0
+    resetseed(args.seed)
     loss = LOSSES[args.loss]()
 
     save_state_dict(model.state_dict(), f'{snapshot_path}init.pt')

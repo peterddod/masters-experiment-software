@@ -58,4 +58,8 @@ resnet: resnet_experiment resnet_process
 
 test_len:
 	rm -rf results/test/test_lenet
-	python test.py -f test_lenet -b 32 -t 0.0003 -m exp_lenet -o adam -e 1 -l crossentropy -s 1 -w 0.00001 -sr 10 -ds mnist -fp 2
+	python test.py -f test_lenet -b 32 -t 0.0003 -m exp_lenet -o adam -e 3 -l crossentropy -s 1 -w 0.00001 -sr 10 -ds mnist -fp 2
+
+test_len2:
+	rm -rf results/main/test_lenet
+	python main.py -f test_lenet -b 32 -t 0.0003 -m exp_lenet -o adam -e 3 -l crossentropy -s 1 -w 0.00001 -sr 10 -ds mnist
