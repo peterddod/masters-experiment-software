@@ -25,7 +25,7 @@ parser.add_argument("-B", "--samplebatchsize", default=10000, help="The number o
 parser.add_argument("-u", "--uniquepatterns", action='store_false', help="Controls whether or not to record number of unique patterns measure (turn this off in large networks)")
 parser.add_argument("-s", "--samplerate", default=10, help="Gap between gradient updates for comparisons", type=int)
 parser.add_argument("-d", "--device", default='cpu', help="Device for processing")
-parser.add_argument("-S", "--seed", default=None, help="Seed for subsampling similarity dataset", type=int)
+parser.add_argument("-S", "--seed", default=1, help="Seed for subsampling similarity dataset", type=int)
 parser.add_argument("-n", default=None, help="Number of samples to use for activation comparison", type=int)
 
 

@@ -135,7 +135,7 @@ class Cutout(object):
         return Image.fromarray(img.astype('uint8'), 'RGB')
 
 
-def get_train_loaders(dataset, batchsize=64, seed=None, n=None):
+def get_train_loaders(dataset, batchsize=64, seed=1, n=None):
     if dataset == 'mnist':
         torch.manual_seed(seed)
         train_loader = torch.utils.data.DataLoader(

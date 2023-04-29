@@ -10,7 +10,7 @@ def run_epoch(model, optimiser, loss, train_datapoint, test_data, target, epoch,
     loss = train_step(model, optimiser, loss, train_datapoint, target, device)
     accuracy = 0
 
-    file(",".join([str(epoch),str(batch_idx),str(loss),str(accuracy)]))
+    if file!= None: file(",".join([str(epoch),str(batch_idx),str(loss),str(accuracy)]))
 
     if batch_idx % 10 == 0:    
         accuracy = evaluate_epoch(model, test_data, device)  

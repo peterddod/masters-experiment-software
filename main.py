@@ -83,6 +83,7 @@ if __name__ == '__main__':
     updates_in_epoch = info_dictionary['dataset_size'] // args.batchsize
 
     for epoch in range(1, args.epochs+1):
+        save_state_dict(model.state_dict(), f'{snapshot_path}{epoch}.pt')
         for batch_idx, (data, target) in enumerate(train_loader):
             take_snapshot = (batch_idx + (epoch-1)*updates_in_epoch) % args.samplerate == 0
 
