@@ -3,11 +3,15 @@ now:
 	
 test:
 	rm -rf results/main/test
-	python main.py -f test -m exp_fc -l crossentropy -e 1
+	python main.py -f test -m exp_fc -l crossentropy -e 2
 
 process:
 	rm -rf results/process/test
 	python process.py -i test -f test -s 10 -u
+
+test_test:
+	rm -rf results/test/test
+	python test.py -f test -m exp_fc -l crossentropy -e 2 -fp 2 -i test
 
 
 

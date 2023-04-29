@@ -41,6 +41,7 @@ parser.add_argument("-w", "--weight_decay", default=0, help="Weight decay", type
 parser.add_argument("-fp", "--freezepoint", default=2, help="Epoch at which to freeze structure", type=int)
 parser.add_argument("-d", "--device", default='cpu', help="Device for training")
 parser.add_argument("-ds", "--dataset", default='mnist', help="Dataset to train with")
+parser.add_argument("-i", "--input", default=None, help="Specific folder from main.py training to take pattern selector from")
 
 
 ### SCRIPT
@@ -57,6 +58,19 @@ if __name__ == '__main__':
     model.to(args.device)
 
     optimiser = OPTIMISERS[args.optimiser](model.parameters(), lr=args.theta)
+
+    start_epoch = 1
+
+    if args.input != None:
+        import_path = f'{PATHS["results"]["main"]}{args.input}/'
+        snapshots_path = f'{import_path}snapshots/'
+        model.load_state_dict(torch.load(f'{snapshots_path}{args.freezepoint}.pt', map_location=torch.device(args.device)))
+
+        optimiser_params = torch.load(f'{snapshots_path}{args.freezepoint}_optim.pt', map_location=torch.device(args.device))
+        optimiser = OPTIMISERS[args.optimiser](model.parameters(), **optimiser_params)
+
+        start_epoch = args.freezepoint
+
 
     results_path = f'{PATHS["results"]["test"]}{args.filename}/'
 
@@ -78,15 +92,16 @@ if __name__ == '__main__':
     resetseed(args.seed)
     loss = LOSSES[args.loss]()
 
-    for epoch in range(1, args.epochs+1):
+    for epoch in range(start_epoch, args.epochs+1):
         if epoch == args.freezepoint:
             model_f = FreezeNet(MODELS[args.model], pattern_selector=model.state_dict(), seed=args.seed)
             model_f.freeze()
-            optimiser = OPTIMISERS[args.optimiser](model_f.parameters(), 
-                                                   lr=optimiser.param_groups[0]['lr'],
-                                                   betas=optimiser.param_groups[0]['betas'],
-                                                   eps=optimiser.param_groups[0]['eps'],
-                                                   )
+
+            # this small block means the optimiser for the freeze network has the same adapted parameters as the original
+            in_params = optimiser.param_groups[0]
+            if 'params' in in_params: del in_params['params']
+            optimiser = OPTIMISERS[args.optimiser](model_f.parameters(), **in_params)
+            
             model_f.to(args.device)
             model = model_f
 

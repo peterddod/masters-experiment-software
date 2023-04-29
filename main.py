@@ -13,6 +13,7 @@ from src.train import *
 import warnings
 import json
 from config import *
+import copy
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -84,6 +85,9 @@ if __name__ == '__main__':
 
     for epoch in range(1, args.epochs+1):
         save_state_dict(model.state_dict(), f'{snapshot_path}{epoch}.pt')
+        in_params = copy.deepcopy(optimiser.param_groups[0])
+        in_params.pop('params')
+        save_state_dict(in_params, f'{snapshot_path}{epoch}_optim.pt')
         for batch_idx, (data, target) in enumerate(train_loader):
             take_snapshot = (batch_idx + (epoch-1)*updates_in_epoch) % args.samplerate == 0
 
