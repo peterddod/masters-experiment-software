@@ -199,6 +199,46 @@ def get_train_loaders(dataset, batchsize=64, seed=1, n=None):
 
         return train_loader, test_loader
     
+    elif dataset == 'cifar10-big':
+        size = (128,128)
+        random.seed(seed)
+        if n!= None:
+            indices = random.sample(range(0, 50000), n)
+        else:
+            indices = range(0, 50000)
+        torch.manual_seed(seed)
+        train_loader = torch.utils.data.DataLoader(
+            Subset(datasets.CIFAR10('./dataset', train=True, download=True,
+                transform=transforms.Compose([
+                    Cutout(num_cutouts=2, size=8, p=0.8),
+                    transforms.RandomCrop(32, padding=4),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.Resize(size),
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+                ])), indices),
+            batch_size=batchsize, 
+            shuffle=True,
+        )
+
+        random.seed(seed)
+        if n!= None:
+            indices = random.sample(range(0, 10000), n)
+        else:
+            indices = range(0, 10000)
+
+        test_loader = torch.utils.data.DataLoader(
+            Subset(datasets.CIFAR10('./dataset', train=False, download=True,
+                transform=transforms.Compose([
+                    transforms.Resize(size),
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+                ])), indices),
+            batch_size=250, 
+            shuffle=False,
+        )
+
+        return train_loader, test_loader
 
 def get_pattern_data(dataset):
     if dataset == 'mnist':

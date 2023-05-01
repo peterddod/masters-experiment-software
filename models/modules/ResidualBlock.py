@@ -50,8 +50,7 @@ class ResidualBlock(nn.Module):
 
 
     def set_activate(self, activate, **kwargs):
-        self.af1 = activate(**kwargs)
-        self.af2 = activate(**kwargs)
+        self.activate = activate
         self.reset_activation_func(**kwargs)
     
     

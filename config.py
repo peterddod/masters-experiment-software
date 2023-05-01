@@ -1,5 +1,5 @@
 from src.similarities import cos_sim, dice_sim, tanimoto_sim
-from models import ResNet9, LeNet5, SimpleMLP
+from models import AlexNet, ResNet9, LeNet5, SimpleMLP
 from torch import nn
 from torch import optim
 
@@ -10,6 +10,7 @@ MODELS = {
     'exp_fc': SimpleMLP,
     'exp_lenet': LeNet5,
     'exp_resnet': ResNet9,
+    'exp_alexnet': AlexNet,
 }
 
 OPTIMISERS = {

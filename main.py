@@ -75,6 +75,8 @@ if __name__ == '__main__':
         'layer_indexes': get_layer_start_indexes(model,train_loader,args.device)
     }
 
+    print(info_dictionary['layer_indexes'])
+
     total = 0
     resetseed(args.seed)
     loss = LOSSES[args.loss]()
